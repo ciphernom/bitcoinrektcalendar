@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar of Rekt</title>
+  <style>
+    :root {
+      --primary-color: #121212;
+      --accent-color: #ff3b30;
+      --text-color: #ffffff;
+      --grid-color: rgba(255, 255, 255, 0.1);
+      --low-risk: rgba(0, 255, 127, 0.8);
+      --medium-risk: rgba(255, 165, 0, 0.8);
+      --high-risk: rgba(255, 59, 48, 0.8);
+      --card-bg: rgba(30, 30, 30, 0.7);
+      --btc-orange: #f7931a;
+      --link-color: #9ecaff;
+    }
+
+    /* Risk color variables for card backgrounds - black to red gradient */
+    .risk-0 { background: rgba(30, 30, 30, 0.9); }
+    .risk-10 { background: rgba(50, 10, 10, 0.9); }
+    .risk-20 { background: rgba(70, 15, 15, 0.9); }
+    .risk-30 { background: rgba(90, 20, 20, 0.9); }
+    .risk-40 { background: rgba(110, 25, 25, 0.9); }
+    .risk-50 { background: rgba(130, 30, 30, 0.9); }
+    .risk-60 { background: rgba(160, 35, 35, 0.9); }
+    .risk-70 { background: rgba(180, 40, 40, 0.9); }
+    .risk-80 { background: rgba(200, 50, 50, 0.9); }
+    .risk-90 { background: rgba(225, 60, 60, 0.9); }
+    .risk-100 { background: rgba(250, 70, 70, 0.9); }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--primary-color);
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(40, 40, 40, 0.4) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(60, 60, 60, 0.3) 0%, transparent 30%);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M50 0 L50 100 M0 50 L100 50" stroke="%23333" stroke-width="0.5"/></svg>');
+      opacity: 0.05;
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 1000px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 0.5rem;
+      position: relative;
+      display: inline-block;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    h1::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -20px;
+      width: 40px;
+      height: 40px;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23f7931a"><path d="M12 0L9.4 8.9 0 9.6l6.7 6.2-2 9.3L12 19.8l7.3 5.3-2-9.3 6.7-6.2-9.4-.7z"/></svg>');
+      background-repeat: no-repeat;
+      opacity: 0.8;
+      transform: rotate(-15deg);
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--btc-orange), transparent);
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      font-weight: 300;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      color: var(--btc-orange);
+    }
+
+    .description {
+      max-width: 800px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+      font-size: 1.1rem;
+      text-align: center;
+      opacity: 0.9;
+      padding: 1.5rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.8rem;
+      width: 100%;
+      padding: 0.5rem;
+      position: relative;
+      isolation: isolate; /* Creates a new stacking context */
+    }
+    
+    .calendar::before {
+      content: '';
+      position: absolute;
+      top: -30px;
+      left: -30px;
+      width: calc(100% + 60px);
+      height: calc(100% + 60px);
+      background: radial-gradient(ellipse at center, rgba(247, 147, 26, 0.15) 0%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .month-card {
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 1.5rem 1.5rem 0.8rem;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      position: relative;
+      overflow: visible;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    .month-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 70%);
+      z-index: 0;
+    }
+
+    .month-card::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .month-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .month-card:hover::after {
+      opacity: 1;
+    }
+
+    .month-name {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.7rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: #fff;
+    }
+
+
+    
+    /* Modal overlay for the background */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+    
+    /* Updated popup styles for modal functionality */
+    .popup-info {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 500px;
+      max-width: 90%;
+      max-height: 80vh;
+      background: rgba(20, 20, 20, 0.96);
+      border-radius: 16px;
+      padding: 1.5rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      z-index: 300;
+      overflow: auto;
+      transform: translate(-50%, -50%) scale(0.9);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .popup-info.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    
+    .popup-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 25px;
+      height: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      z-index: 5;
+    }
+    
+    .popup-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .popup-close::before,
+    .popup-close::after {
+      content: '';
+      position: absolute;
+      width: 15px;
+      height: 2px;
+      background: white;
+      border-radius: 1px;
+    }
+    
+    .popup-close::before {
+      transform: rotate(45deg);
+    }
+    
+    .popup-close::after {
+      transform: rotate(-45deg);
+    }
+    
+    .popup-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      padding-right: 30px;
+      color: var(--btc-orange);
+      text-align: center;
+    }
+    
+    .crash-event {
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      background: rgba(30, 30, 30, 0.6);
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 3px solid var(--btc-orange);
+    }
+    
+    .crash-header {
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .crash-date {
+      font-weight: 700;
+      color: #ff3b30;
+    }
+    
+    .crash-percentage {
+      font-weight: 700;
+    }
+    
+    .crash-description {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--btc-orange);
+    }
+    
+    .crash-context {
+      margin-bottom: 0.8rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    
+    .crash-links {
+      margin-top: 0.8rem;
+      font-size: 0.85rem;
+    }
+    
+    .links-title {
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+      color: #ccc;
+    }
+    
+    .crash-links ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .crash-links li {
+      margin-bottom: 0.3rem;
+      padding-left: 0.8rem;
+      position: relative;
+    }
+    
+    .crash-links li:before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--btc-orange);
+    }
+    
+    .crash-links a {
+      color: var(--link-color);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    
+    .crash-links a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 900px) {
+      .calendar {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .calendar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .calendar {
+        grid-template-columns: 1fr;
+      }
+      
+      .popup-info {
+        width: 95%;
+        max-height: 85vh;
+      }
+    }
+
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 400px;
+      width: 100%;
+      position: relative;
+    }
+
+    .loading-spinner {
+      border: 5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top: 5px solid var(--btc-orange);
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 25px;
+      box-shadow: 0 0 20px rgba(247, 147, 26, 0.3);
+    }
+    
+    .loading-spinner::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23f7931a"><path d="M11.5 1.03125C5.45996 1.03125 0.53125 5.96045 0.53125 12C0.53125 18.0396 5.45996 22.9688 11.5 22.9688C17.54 22.9688 22.4688 18.0396 22.4688 12C22.4688 5.96045 17.54 1.03125 11.5 1.03125ZM16.3438 16.4062L10.0938 19.2812L9.15625 17.5938L15.4062 14.6562L16.3438 16.4062ZM16.8438 10.5312L10.5938 13.4062L9.65625 11.7188L15.9062 8.84375L16.8438 10.5312ZM11.5 5.34375C11.9844 5.34375 12.375 5.73438 12.375 6.21875C12.375 6.70313 11.9844 7.09375 11.5 7.09375C11.0156 7.09375 10.625 6.70313 10.625 6.21875C10.625 5.73438 11.0156 5.34375 11.5 5.34375Z"/></svg>');
+      background-repeat: no-repeat;
+      opacity: 0.7;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.4rem;
+      font-weight: 300;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+
+    .error-message {
+      color: var(--accent-color);
+      text-align: center;
+      padding: 2rem;
+      font-size: 1.2rem;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .data-info {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 1rem;
+      max-width: 850px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .data-info p {
+      margin-bottom: 0.7rem;
+    }
+    
+    .data-info p:last-child {
+      margin-bottom: 0;
+    }
+    .risk-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1rem 0 0.5rem;
+}
+
+.risk-percentage {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Progress bar container */
+.progress-container {
+  width: 85%;
+  height: 12px;
+  background-color: #222;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.5rem;
+}
+
+/* Progress bar fill - transitions from black to red */
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #222, #ff3333);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+/* Progress bar labels */
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 85%;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Calendar of Rekt</h1>
+      <div class="subtitle">Bitcoin Extreme Crash Risk Forecast</div>
+      <div class="description">
+        <strong>What are your chances of getting REKT this month?</strong> This visualization reveals the monthly probability of experiencing at least one extreme Bitcoin price crash (daily returns below the 1st percentile). Based on a comprehensive analysis of historical BTC price patterns using a Poisson-Gamma Bayesian model with seasonal adjustments. <span style="font-style: italic; color: var(--btc-orange);">Click on any month to see historical crash events with detailed news &amp; analysis.</span>
+      </div>
+    </header>
+
+    <div id="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Analyzing complete Bitcoin price history for statistical patterns...</div>
+    </div>
+
+    <div class="calendar" id="calendar" style="display: none;"></div>
+
+    <div class="data-info" id="data-info" style="display: none;">
+      <p><strong>METHODOLOGY:</strong> Based on comprehensive Bitcoin price data through October 2024. Forecast period: 30 days.</p>
+      <p id="data-summary"></p>
+      <p>Risk calculation uses a Poisson-Gamma Bayesian model with seasonal adjustments (a₀=1.0, b₀=1.0, τ=30) to predict extreme market events.</p>
+      <p style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.7;">© Calendar of Rekt 2025 | Not financial advice | Past performance does not guarantee future results</p>
+    </div>
+  </div>
+  
+  <!-- Modal overlay for popup background -->
+  <div class="modal-overlay" id="modalOverlay"></div>
+  
+  <!-- Reusable popup container -->
+  <div class="popup-info" id="popupInfo">
+    <div class="popup-close" id="popupClose"></div>
+    <div class="popup-title" id="popupTitle"></div>
+    <div id="popupContent"></div>
+    <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem; opacity: 0.7;">
+      Based on 1st percentile daily returns
+    </div>
+  </div>
+  
+  <!-- Bitcoin price particles in background -->
+  <canvas id="bitcoinCanvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; opacity: 0.15;"></canvas>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const calendar = document.getElementById('calendar');
+      const loading = document.getElementById('loading');
+      const dataInfo = document.getElementById('data-info');
+      const modalOverlay = document.getElementById('modalOverlay');
+      const popupInfo = document.getElementById('popupInfo');
+      const popupClose = document.getElementById('popupClose');
+      const popupTitle = document.getElementById('popupTitle');
+      const popupContent = document.getElementById('popupContent');
+
+      // Parameters from the Python code
+      const a0 = 1.0;       // baseline prior shape
+      const b0 = 1.0;       // baseline prior scale
+      const tau = 30;       // forecast period in days
+      
+      // Month names for display
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+
+      // Update loading text
+      document.querySelector('.loading-text').textContent = 'Fetching complete Bitcoin historical data...';
+      
+      // Fetch Bitcoin data - using the full dataset
+      fetch('https://raw.githubusercontent.com/coinmetrics/data/master/csv/btc.csv')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          document.querySelector('.loading-text').textContent = 'Processing data and calculating risk model...';
+          return response.text();
+        })
+        .then(csvText => {
+          // Process the data
+          const data = processData(csvText);
+          // Calculate risk by month
+          const riskByMonth = calculateRisk(data);
+          // Find historical crashes from the data
+          const historicalCrashes = findHistoricalCrashes(data);
+          // Render the calendar
+          renderCalendar(riskByMonth, historicalCrashes);
+          
+          // Add data summary
+          const dataSummary = document.getElementById('data-summary');
+          dataSummary.textContent = `Analysis based on ${data.length.toLocaleString()} data points spanning from ${data[0].date.toLocaleDateString()} to ${data[data.length-1].date.toLocaleDateString()}.`;
+          
+          // Hide loading, show calendar and info
+          loading.style.display = 'none';
+          calendar.style.display = 'grid';
+          dataInfo.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error fetching or processing data:', error);
+          loading.innerHTML = `<div class="error-message">Error: ${error.message}. Please try refreshing the page.</div>`;
+        });
+        
+        
+function getHalvingEpoch(date) {
+  // Bitcoin halving dates
+  const halvingDates = [
+    new Date('2009-01-03'), // Genesis block (not an actual halving)
+    new Date('2012-11-28'), // First halving
+    new Date('2016-07-09'), // Second halving
+    new Date('2020-05-11'), // Third halving
+    new Date('2024-04-20')  // Fourth halving
+  ];
+  
+  // Find the appropriate epoch
+  for (let i = halvingDates.length - 1; i >= 0; i--) {
+    if (date >= halvingDates[i]) {
+      return i;
+    }
+  }
+  
+  return 0; // Default to first epoch if before first halving
+}
+      // Process CSV data - uses ALL available data
+   function processData(csvText) {
+      const lines = csvText.trim().split('\n');
+      const headers = lines[0].split(',');
+      
+      // Find index of time and PriceUSD columns
+      const timeIndex = headers.indexOf('time');
+      const priceIndex = headers.indexOf('PriceUSD');
+      
+      if (timeIndex === -1 || priceIndex === -1) {
+        throw new Error('CSV format is not as expected');
+      }
+      
+      // Parse ALL data
+      const data = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        const dateString = values[timeIndex];
+        const price = parseFloat(values[priceIndex]);
+        
+        if (!isNaN(price)) {
+          const date = new Date(dateString);
+          data.push({
+            date: date,
+            price: price,
+            halvingEpoch: getHalvingEpoch(date)
+          });
+        }
+      }
+      
+      // Sort by date to ensure chronological order
+      data.sort((a, b) => a.date - b.date);
+      
+      // Calculate log returns
+      for (let i = 1; i < data.length; i++) {
+        data[i].logReturn = Math.log(data[i].price / data[i-1].price);
+      }
+      data[0].logReturn = 0;
+      
+      console.log(`Processed ${data.length} data points from ${data[0].date.toISOString().split('T')[0]} to ${data[data.length-1].date.toISOString().split('T')[0]}`);
+      
+      return data;
+    }
+
+      // Calculate risk by month using the Poisson-Gamma model with seasonal factors
+      function calculateRisk(data) {
+  console.log(`Calculating risk model using ${data.length} data points`);
+  
+  // Group data by halving epoch
+  const epochData = {};
+  data.forEach(d => {
+    if (!epochData[d.halvingEpoch]) {
+      epochData[d.halvingEpoch] = [];
+    }
+    epochData[d.halvingEpoch].push(d);
+  });
+  
+  // Calculate 1st percentile thresholds for each epoch
+  const thresholds = {};
+  Object.keys(epochData).forEach(epoch => {
+    const epochLogReturns = epochData[epoch]
+      .map(d => d.logReturn)
+      .filter(r => !isNaN(r) && isFinite(r));
+    
+    epochLogReturns.sort((a, b) => a - b);
+    const threshold = epochLogReturns[Math.floor(epochLogReturns.length * 0.01)];
+    thresholds[epoch] = threshold;
+    
+    console.log(`Epoch ${epoch} threshold (1st percentile): ${threshold}`);
+  });
+  
+  // Mark extreme events using epoch-specific thresholds
+  data.forEach(d => {
+    const threshold = thresholds[d.halvingEpoch];
+    d.extremeEvent = d.logReturn < threshold ? 1 : 0;
+  });
+  
+  // Continue with the rest of the risk calculation as before...
+  // Calculate overall extreme event frequency
+  const totalExtremeEvents = data.reduce((sum, d) => sum + d.extremeEvent, 0);
+  const overallFreq = totalExtremeEvents / data.length;
+  console.log(`Overall extreme event frequency: ${(overallFreq * 100).toFixed(2)}% (${totalExtremeEvents} events in ${data.length} days)`);
+  
+  // Calculate seasonal factors by month
+  const seasonalFactors = {};
+  const monthlyStats = {};
+  
+  for (let m = 1; m <= 12; m++) {
+    const monthlyData = data.filter(d => d.date.getMonth() + 1 === m);
+    if (monthlyData.length === 0) continue;
+    
+    const monthlyExtremeEvents = monthlyData.reduce((sum, d) => sum + d.extremeEvent, 0);
+    const monthlyFreq = monthlyExtremeEvents / monthlyData.length;
+    seasonalFactors[m] = overallFreq > 0 ? monthlyFreq / overallFreq : 1.0;
+    
+    monthlyStats[m] = {
+      totalDays: monthlyData.length,
+      extremeEvents: monthlyExtremeEvents,
+      frequency: monthlyFreq,
+      seasonalFactor: seasonalFactors[m]
+    };
+  }
+  
+  console.log('Monthly statistics:', monthlyStats);
+  
+  // Calculate risk by month using the same Bayesian formula
+  const a0 = 1.0;       // baseline prior shape
+  const b0 = 1.0;       // baseline prior scale
+  const tau = 30;       // forecast period in days
+  
+  const riskByMonth = {};
+  for (let m = 1; m <= 12; m++) {
+    const stats = monthlyStats[m];
+    if (!stats) {
+      riskByMonth[m] = 0;
+      continue;
+    }
+    
+    const T = stats.totalDays;
+    const N = stats.extremeEvents;
+    const S_m = stats.seasonalFactor;
+    
+    // Risk formula from the Python code
+    const risk = 1 - Math.pow((b0 + T) / (b0 + T + tau), (a0 * S_m + N));
+    riskByMonth[m] = risk;
+  }
+  
+  console.log('Monthly risk estimates with epoch-specific thresholds:', riskByMonth);
+  return riskByMonth;
+}
+
+      // Enhanced function to find historical crashes with detailed context
+     function findHistoricalCrashes(data) {
+  // Get extreme events
+  const extremeEvents = data.filter(d => d.extremeEvent === 1);
+  
+  // Organize by month
+  const crashesByMonth = {};
+  for (let m = 1; m <= 12; m++) {
+    crashesByMonth[m] = [];
+  }
+  
+  // For each extreme event, calculate the percentage drop and include epoch info
+  extremeEvents.forEach(event => {
+    const month = event.date.getMonth() + 1;
+    const dateStr = event.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const percentageDrop = (Math.exp(event.logReturn) - 1) * 100;
+    
+    // Add epoch information
+    const epochNames = [
+      "Pre-first halving",
+      "First halving epoch",
+      "Second halving epoch",
+      "Third halving epoch",
+      "Fourth halving epoch"
+    ];
+    
+    const epochInfo = epochNames[event.halvingEpoch] || `Halving epoch ${event.halvingEpoch}`;
+    
+    // Default values
+    let description = '';
+    let links = [];
+    let context = '';
+    
+    // Find the event in our database of known crashes
+    const knownCrashInfo = getKnownCrashInfo(event.date, month, percentageDrop);
+    
+    if (knownCrashInfo) {
+      description = knownCrashInfo.description;
+      context = knownCrashInfo.context;
+      links = knownCrashInfo.links;
+    } else {
+      // For previously unexplained crashes, provide general market context
+      const crashInfo = generateCrashContext(event.date, percentageDrop);
+      description = crashInfo.description;
+      context = crashInfo.context;
+    }
+    
+    // Add epoch information to context
+    context = `[${epochInfo}] ${context}`;
+    
+    // Add to the crashes array for this month
+    crashesByMonth[month].push({
+      date: dateStr,
+      percentage: percentageDrop.toFixed(1),
+      description: description,
+      context: context,
+      links: links,
+      epoch: event.halvingEpoch
+    });
+  });
+  
+  // Sort crashes by date (most recent first) and limit to top 5 per month
+  for (let m = 1; m <= 12; m++) {
+    crashesByMonth[m].sort((a, b) => new Date(b.date) - new Date(a.date));
+    crashesByMonth[m] = crashesByMonth[m].slice(0, 5); // Take only top 5 crashes per month
+  }
+  
+  return crashesByMonth;
+}
+
+      // Function to get information for known major crashes
+      function getKnownCrashInfo(date, month, percentageDrop) {
+        const year = date.getFullYear();
+        const day = date.getDate();
+        
+        // January events
+        if (year === 2018 && month === 1 && day >= 15 && day <= 17) {
+          return {
+            description: "Beginning of 2018 crypto winter",
+            context: "Sharp selloff as South Korea and China signaled crackdowns on crypto trading and mining. Bitcoin fell from nearly $20K to below $10K within a month.",
+            links: [
+              { text: "South Korea's Crypto Crackdown", url: "https://www.cnbc.com/2018/01/16/south-korea-cryptocurrency-crackdown-bitcoin-trading-rules.html" },
+              { text: "China Escalates Crackdown", url: "https://www.bloomberg.com/news/articles/2018-01-15/china-is-said-to-escalate-crackdown-on-cryptocurrency-trading" }
+            ]
+          };
+        }
+        if (year === 2022 && month === 1 && day >= 20 && day <= 24) {
+          return {
+            description: "Tech stock correlation crash",
+            context: "Bitcoin fell alongside tech stocks as the Federal Reserve signaled interest rate hikes, causing investors to flee risk assets.",
+            links: [
+              { text: "Crypto Crash Erases More Than $1 Trillion", url: "https://www.cnbc.com/2022/01/22/bitcoin-plunges-to-35000-and-ethereum-joins-the-sell-off.html" },
+              { text: "Bitcoin's Correlation With Tech Stocks", url: "https://www.marketwatch.com/story/bitcoin-slumps-with-stocks-and-is-now-down-50-from-all-time-high-11642883859" }
+            ]
+          };
+        }
+        if (year === 2015 && month === 1 && day >= 12 && day <= 14) {
+          return {
+            description: "Bitstamp exchange hack",
+            context: "Bitcoin dropped nearly 15% after major exchange Bitstamp was hacked and lost around 19,000 BTC, worth approximately $5 million at the time.",
+            links: [
+              { text: "Bitstamp Exchange Hacked", url: "https://www.coindesk.com/markets/2015/01/05/bitstamp-claims-roughly-19000-bitcoins-lost-in-hot-wallet-hack/" },
+              { text: "Analysis of the Security Breach", url: "https://www.wired.com/2015/01/bitstamp-exchange-reopens-after-hack/" }
+            ]
+          };
+        }
+        
+        // February events
+        if (year === 2018 && month === 2 && day >= 4 && day <= 6) {
+          return {
+            description: "Continued 2018 bear market decline",
+            context: "Bitcoin continued its decline after regulatory concerns and credit card companies banned crypto purchases. The total crypto market lost over 60% from its peak.",
+            links: [
+              { text: "Major Banks Ban Crypto Purchases", url: "https://www.theguardian.com/technology/2018/feb/05/bitcoin-drops-below-8000-dollars-value-cryptocurrency-trading-ban-fears" },
+              { text: "Global Regulatory Concerns", url: "https://www.forbes.com/sites/cbovaird/2018/02/05/why-the-crypto-market-has-lost-more-than-60-of-its-value/" }
+            ]
+          };
+        }
+        if (year === 2014 && month === 2 && day >= 7 && day <= 10) {
+          return {
+            description: "Mt. Gox withdrawal halt",
+            context: "Bitcoin tumbled after Mt. Gox, then the largest Bitcoin exchange, halted all withdrawals citing technical issues. This was the beginning of the exchange's ultimate collapse.",
+            links: [
+              { text: "Mt. Gox Halts Withdrawals", url: "https://www.coindesk.com/markets/2014/02/07/mt-gox-bitcoin-withdrawals-suspended-due-to-technical-problems/" },
+              { text: "Price Impact Analysis", url: "https://www.reuters.com/article/us-bitcoin-mtgox-idUSBREA1806V20140209" }
+            ]
+          };
+        }
+        
+        // March events
+        if (year === 2020 && month === 3 && day >= 12 && day <= 13) {
+          return {
+            description: "COVID-19 pandemic market crash",
+            context: "The 'COVID crash' saw Bitcoin plummet nearly 40% in a single day as global markets collapsed amid pandemic fears. This was Bitcoin's largest one-day price drop in seven years.",
+            links: [
+              { text: "Crypto's Black Thursday", url: "https://www.coindesk.com/markets/2020/03/13/bitcoin-crashes-40-in-precipitous-sell-off/" },
+              { text: "Market-Wide Liquidation Event", url: "https://www.bloomberg.com/news/articles/2020-03-12/bitcoin-plunges-to-lowest-in-a-year-as-volatility-grips-market" },
+              { text: "DeFi Liquidation Crisis", url: "https://blog.makerdao.com/the-market-collapse-of-march-12-2020-how-it-impacted-makerdao/" }
+            ]
+          };
+        }
+        if (year === 2018 && month === 3 && day >= 14 && day <= 15) {
+          return {
+            description: "Google ad ban announcement",
+            context: "Bitcoin dropped after Google announced it would ban cryptocurrency advertising, following a similar move by Facebook.",
+            links: [
+              { text: "Google Bans Crypto Ads", url: "https://www.cnbc.com/2018/03/14/google-bans-crypto-ads-bitcoin-price-slumps.html" },
+              { text: "Market Reaction", url: "https://www.bloomberg.com/news/articles/2018-03-14/google-to-ban-cryptocurrency-initial-coin-offering-ads-in-june" }
+            ]
+          };
+        }
+        
+        // April events
+        if (year === 2018 && month === 4 && day >= 5 && day <= 6) {
+          return {
+            description: "Regulatory enforcement actions",
+            context: "A series of enforcement actions by financial regulators worldwide triggered a broad market sell-off.",
+            links: [
+              { text: "Market Analysis", url: "https://www.cnbc.com/2018/04/06/why-bitcoin-is-falling-tax-day.html" }
+            ]
+          };
+        }
+        if (year === 2013 && month === 4 && day >= 10 && day <= 12) {
+          return {
+            description: "Early exchange overload crash",
+            context: "Bitcoin price crashed after the primary exchanges at the time (Mt. Gox and Bitstamp) experienced technical issues and trading halts due to unprecedented volume.",
+            links: [
+              { text: "Mt. Gox Trading Halt", url: "https://www.theverge.com/2013/4/11/4212266/beyond-silk-road-potential-risks-challenges-digital-currency-bitcoin-exchanges" }
+            ]
+          };
+        }
+        
+        // May events
+        if (year === 2021 && month === 5 && day >= 18 && day <= 20) {
+          return {
+            description: "Tesla stops Bitcoin payments, China crackdown",
+            context: "Bitcoin crashed over 30% as Tesla suspended Bitcoin payments citing environmental concerns and China intensified its crypto crackdown. The crash wiped out over $500 billion from the crypto market.",
+            links: [
+              { text: "Elon Musk Suspends Bitcoin Payments", url: "https://twitter.com/elonmusk/status/1392602041025843203" },
+              { text: "China Bans Financial Institutions from Crypto Business", url: "https://www.reuters.com/technology/chinese-financial-payment-bodies-barred-cryptocurrency-business-2021-05-18/" },
+              { text: "Market Analysis of the Crash", url: "https://www.coindesk.com/markets/2021/05/19/bitcoin-drops-to-30k-losing-ground-to-its-2021-starting-price/" }
+            ]
+          };
+        }
+        if (year === 2021 && month === 5 && day >= 12 && day <= 13) {
+          return {
+            description: "Elon Musk Tesla Bitcoin concerns",
+            context: "Bitcoin dropped after Elon Musk tweeted that Tesla would stop accepting Bitcoin for vehicle purchases, citing environmental concerns. This was the initial shock before the larger May 19 crash.",
+            links: [
+              { text: "Musk's Original Tweet", url: "https://twitter.com/elonmusk/status/1392602041025843203" },
+              { text: "Tesla Suspends Vehicle Purchases Using Bitcoin", url: "https://www.cnbc.com/2021/05/12/elon-musk-says-tesla-will-stop-accepting-bitcoin-for-car-purchases.html" }
+            ]
+          };
+        }
+        
+        // June events
+        if (year === 2022 && month === 6 && day >= 12 && day <= 16) {
+          return {
+            description: "Celsius Network crisis and market contagion",
+            context: "Following the Luna/Terra collapse in May, lending platform Celsius Network froze withdrawals, triggering another market crash. Bitcoin fell below $20K for the first time since Dec 2020.",
+            links: [
+              { text: "Celsius Freezes Withdrawals", url: "https://blog.celsius.network/a-memo-to-the-celsius-community-59532a06ecc6" },
+              { text: "Market Contagion Spreads", url: "https://www.cnbc.com/2022/06/15/bitcoin-tumbles-as-crypto-lender-celsius-reportedly-prepares-for-bankruptcy.html" },
+              { text: "Three Arrows Capital Default", url: "https://www.bloomberg.com/news/articles/2022-06-16/three-arrows-capital-facing-major-liquidations-by-counterparties" }
+            ]
+          };
+        }
+        if (year === 2021 && month === 6 && day >= 21 && day <= 22) {
+          return {
+            description: "China mining ban escalation",
+            context: "Bitcoin dropped sharply after China ordered banks to block cryptocurrency transactions and stepped up its mining ban, forcing miners to shut down operations in key provinces like Sichuan.",
+            links: [
+              { text: "China Mining Crackdown", url: "https://www.reuters.com/technology/bitcoin-mining-chinas-sichuan-province-be-shut-down-state-media-reports-2021-06-18/" },
+              { text: "70% Hash Rate Decline", url: "https://www.cnbc.com/2021/06/22/bitcoin-btc-price-drops-on-china-crypto-mining-crackdown.html" }
+            ]
+          };
+        }
+        
+        // July events
+        if (year === 2019 && month === 7 && day >= 14 && day <= 17) {
+          return {
+            description: "US government crypto criticism",
+            context: "Bitcoin and other cryptocurrencies crashed after US officials including Treasury Secretary Mnuchin and President Trump issued negative statements about cryptocurrencies, particularly regarding Facebook's Libra project.",
+            links: [
+              { text: "Trump's Bitcoin Criticism", url: "https://twitter.com/realDonaldTrump/status/1149472282584072192" },
+              { text: "Mnuchin Press Conference", url: "https://www.cnbc.com/2019/07/15/mnuchin-says-treasury-has-serious-concerns-about-facebooks-libra.html" }
+            ]
+          };
+        }
+        
+        // August events
+        if (year === 2018 && month === 8 && day >= 8 && day <= 9) {
+          return {
+            description: "SEC delays Bitcoin ETF decision",
+            context: "Bitcoin price dropped after the SEC delayed its decision on the VanEck/SolidX Bitcoin ETF proposal, dampening hopes for institutional adoption.",
+            links: [
+              { text: "SEC Delays Bitcoin ETF", url: "https://www.coindesk.com/markets/2018/08/07/sec-delays-vaneck-solidx-bitcoin-etf-decision-to-september/" }
+            ]
+          };
+        }
+        
+        // September events
+        if (year === 2021 && month === 9 && day === 7) {
+          return {
+            description: "El Salvador adoption selloff",
+            context: "Bitcoin crashed over 10% on the day El Salvador officially adopted Bitcoin as legal tender, in a classic 'buy the rumor, sell the news' event. Implementation issues with the country's Chivo wallet compounded the problem.",
+            links: [
+              { text: "El Salvador's Rocky Bitcoin Implementation", url: "https://www.cnbc.com/2021/09/07/bitcoin-plunges-after-el-salvador-adopts-it-as-legal-tender.html" },
+              { text: "Technical Issues Plague Launch", url: "https://www.theverge.com/2021/9/7/22661515/el-salvador-bitcoin-legal-tender-currency-cryptocurrency-chivo-wallet" }
+            ]
+          };
+        }
+        if (year === 2019 && month === 9 && day >= 24 && day <= 25) {
+          return {
+            description: "Bakkt launch disappointment",
+            context: "Bitcoin crashed following the underwhelming launch of Bakkt's physically-settled Bitcoin futures, which saw much lower trading volume than anticipated after months of hype.",
+            links: [
+              { text: "Bakkt's Disappointing Launch", url: "https://www.coindesk.com/markets/2019/09/24/bitcoin-price-dives-14-in-one-hour-triggering-massive-cryptocurrency-market-sell-off/" }
+            ]
+          };
+        }
+        
+        // October events
+        if (year === 2019 && month === 10 && day >= 23 && day <= 25) {
+          return {
+            description: "China blockchain pivot and exchange crackdown",
+            context: "After an initial surge when Chinese President Xi Jinping endorsed blockchain technology, the market dropped when authorities clarified this didn't mean support for cryptocurrencies and intensified exchange crackdowns.",
+            links: [
+              { text: "China's Blockchain Endorsement", url: "https://www.bloomberg.com/news/articles/2019-10-28/china-s-crypto-endorsement-pumps-bitcoin-but-price-enthusiasm-is-contained" }
+            ]
+          };
+        }
+        
+        // November events
+        if (year === 2022 && month === 11 && day >= 8 && day <= 10) {
+          return {
+            description: "FTX collapse",
+            context: "The sudden collapse of FTX, one of the world's largest cryptocurrency exchanges, following a CoinDesk report about irregularities in the exchange's balance sheet. This caused a bank run, liquidity crisis, and eventual bankruptcy filing, sending shockwaves through the entire crypto industry.",
+            links: [
+              { text: "CoinDesk's Balance Sheet Exposé", url: "https://www.coindesk.com/business/2022/11/02/divisions-in-sam-bankman-frieds-crypto-empire-blur-on-his-trading-titan-alamedas-balance-sheet/" },
+              { text: "Binance Backs Out of FTX Rescue", url: "https://www.bloomberg.com/news/articles/2022-11-09/binance-seen-likely-to-pull-out-of-ftx-rescue-amid-us-probe-dot-com-era-issues" },
+              { text: "FTX Files for Bankruptcy", url: "https://www.wsj.com/articles/ftx-files-for-bankruptcy-ceo-sam-bankman-fried-resigns-11668176869" }
+            ]
+          };
+        }
+        if (year === 2018 && month === 11 && day >= 14 && day <= 15) {
+          return {
+            description: "Bitcoin Cash hard fork conflict",
+            context: "Bitcoin's price fell significantly during the contentious Bitcoin Cash hard fork that split the BCH network into two competing chains (BCH ABC and BCH SV), dragging down the entire crypto market.",
+            links: [
+              { text: "Hash War Between BCH Factions", url: "https://www.coindesk.com/markets/2018/11/14/bitcoins-price-plummets-below-5800-as-crypto-market-takes-deep-dive/" }
+            ]
+          };
+        }
+        
+        // December events
+        if (year === 2021 && month === 12 && day >= 3 && day <= 5) {
+          return {
+            description: "Market-wide leverage liquidation",
+            context: "Bitcoin crashed nearly 20% in a single day as over $2.5 billion in leveraged positions were liquidated. The crash coincided with broader market concerns over the Omicron COVID variant and Fed hawkishness.",
+            links: [
+              { text: "Liquidation Cascade Breakdown", url: "https://www.bloomberg.com/news/articles/2021-12-04/bitcoin-plunges-over-20-in-another-sign-of-global-market-nerves" },
+              { text: "Impact on DeFi Markets", url: "https://www.coindesk.com/markets/2021/12/04/bitcoin-falls-20-in-hours-on-2b-of-liquidations-futures-in-complete-reset/" }
+            ]
+          };
+        }
+        if (year === 2017 && month === 12 && day >= 21 && day <= 22) {
+          return {
+            description: "Post-ATH correction",
+            context: "Bitcoin crashed over 30% just days after hitting its then-all-time high of nearly $20,000, as early investors took profits and exchange issues mounted with the unprecedented trading volume.",
+            links: [
+              { text: "Market Correction Analysis", url: "https://www.cnbc.com/2017/12/22/bitcoin-recovers-some-of-fridays-losses-but-uncertainty-remains.html" }
+            ]
+          };
+        }
+        
+        // Return null if no match found (will be handled by the generateCrashContext function)
+        return null;
+      }
+
+      // Function to generate context for previously unexplained crashes
+      function generateCrashContext(date, percentageDrop) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        
+        // General market patterns by year
+        let yearContext = "";
+        if (year <= 2013) {
+          yearContext = "Early market volatility period when Bitcoin was thinly traded on few exchanges. Price swings of 10-20% were common even without specific news triggers.";
+        } else if (year === 2014 || year === 2015) {
+          yearContext = "Post-Mt. Gox collapse bear market where negative sentiment, regulatory uncertainty, and low liquidity contributed to ongoing volatility.";
+        } else if (year === 2016) {
+          yearContext = "Early recovery period after the 2014-2015 bear market, still characterized by relatively low liquidity and high volatility.";
+        } else if (year === 2017) {
+          yearContext = "Bull market year with frequent corrections amid the ICO boom, high retail speculation, and rapid price appreciation.";
+        } else if (year === 2018) {
+          yearContext = "Prolonged bear market following the 2017 bull run, with multiple capitulation events and declining prices throughout the year.";
+        } else if (year === 2019) {
+          yearContext = "Gradual recovery period with occasional market-wide selloffs, often triggered by large exchange outflows or liquidations.";
+        } else if (year === 2020) {
+          yearContext = "High volatility year marked by the COVID crash in March followed by institutional adoption and renewed bull market.";
+        } else if (year === 2021) {
+          yearContext = "Extended bull market with multiple major corrections, influenced by institutional participation, high leverage, and regulatory developments.";
+        } else if (year === 2022) {
+          yearContext = "Crypto winter following the unwinding of excessive leverage, multiple high-profile protocol/company failures, and Fed rate hikes.";
+        } else if (year === 2023) {
+          yearContext = "Recovery period with occasional volatility triggered by regulatory developments and ongoing contagion from 2022 failures.";
+        } else if (year >= 2024) {
+          yearContext = "Current market cycle with volatility influenced by macro factors, regulatory developments, and institutional adoption patterns.";
+        }
+        
+        // Determine crash severity
+        let severityDesc = "";
+        if (percentageDrop > -10) {
+          severityDesc = "Minor correction";
+        } else if (percentageDrop > -15) {
+          severityDesc = "Moderate sell-off";
+        } else if (percentageDrop > -20) {
+          severityDesc = "Significant drop";
+        } else if (percentageDrop > -30) {
+          severityDesc = "Major crash";
+        } else {
+          severityDesc = "Extreme market collapse";
+        }
+        
+        // Create description based on severity
+        const description = `${severityDesc} during ${year} ${getMarketPhase(year, month)}`;
+        
+        // Create context combining year pattern and severity
+        const context = `This price drop occurred during the ${getMarketPhase(year, month)} of ${year}. ${yearContext}`;
+        
+        return {
+          description: description,
+          context: context
+        };
+      }
+
+      // Helper function to determine market phase for a given year and month
+      function getMarketPhase(year, month) {
+        if (year === 2013 && month >= 11) return "bull market peak";
+        if (year === 2014 || year === 2015) return "bear market";
+        if (year === 2016) return "accumulation phase";
+        if (year === 2017) return "bull market";
+        if (year === 2018) return "bear market";
+        if (year === 2019 && month <= 6) return "early recovery";
+        if (year === 2019 && month > 6) return "consolidation phase";
+        if (year === 2020 && month <= 3) return "pre-COVID period";
+        if (year === 2020 && month > 3 && month < 10) return "post-halving rally";
+        if (year === 2020 && month >= 10) return "early bull market";
+        if (year === 2021 && month <= 4) return "bull market peak";
+        if (year === 2021 && month > 4 && month <= 7) return "mid-year correction";
+        if (year === 2021 && month > 7) return "second bull run";
+        if (year === 2022 && month <= 5) return "market downturn";
+        if (year === 2022 && month > 5) return "crypto winter";
+        if (year === 2023 && month <= 3) return "banking crisis period";
+        if (year === 2023 && month > 3) return "recovery phase";
+        if (year === 2024 && month <= 3) return "pre-halving period";
+        if (year === 2024 && month > 3) return "post-halving phase";
+        
+        // Default for any other periods
+        return "market cycle";
+      }
+
+
+function createRiskDisplay(percentage) {
+  return `
+    <div class="risk-container">
+      <div class="risk-percentage">
+        ${percentage}%
+      </div>
+      <div class="progress-container">
+        <div class="progress-fill" style="width: ${percentage}%;"></div>
+      </div>
+      <div class="progress-labels">
+        <span>0%</span>
+        <span>100%</span>
+      </div>
+    </div>
+  `;
+}
+
+      function renderCalendar(riskByMonth, historicalCrashes) {
+        // Clear existing content
+        calendar.innerHTML = '';
+        
+        // Create month cards
+        for (let month = 1; month <= 12; month++) {
+          const risk = riskByMonth[month];
+          const riskPercentage = (risk * 100).toFixed(1);
+          
+          // Determine risk class based on percentage
+          const riskClass = `risk-${Math.floor(risk * 10) * 10}`;
+          
+          const monthCard = document.createElement('div');
+          monthCard.className = `month-card ${riskClass}`;
+          monthCard.innerHTML = `
+            <div class="month-name">${monthNames[month-1]}</div>
+            ${createRiskDisplay(riskPercentage)}
+          `;
+          
+          // Add click event to open popup
+          monthCard.addEventListener('click', function() {
+            openMonthPopup(month, historicalCrashes[month] || []);
+          });
+
+          calendar.appendChild(monthCard);
+        }
+
+        // Initialize the Bitcoin canvas animation
+        initBitcoinCanvas();
+      }
+      
+      // Function to open month popup with enhanced content display
+      function openMonthPopup(month, crashEvents) {
+        // Set popup title
+        popupTitle.textContent = `${monthNames[month-1]} Historical Crashes`;
+        
+        // Create popup content
+        if (crashEvents.length > 0) {
+          popupContent.innerHTML = crashEvents.map(event => {
+            // Create HTML for links if available
+            const linksHTML = event.links && event.links.length > 0 
+              ? `
+                <div class="crash-links">
+                  <div class="links-title">📰 Related News:</div>
+                  <ul>
+                    ${event.links.map(link => `
+                      <li><a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.text}</a></li>
+                    `).join('')}
+                  </ul>
+                </div>
+              ` 
+              : '';
+            
+            // Create HTML for context if available
+            const contextHTML = event.context 
+              ? `<div class="crash-context">${event.context}</div>` 
+              : '';
+            
+            return `
+              <div class="crash-event">
+                <div class="crash-header">
+                  <span class="crash-date">${event.date}</span>: 
+                  <span class="crash-percentage">${event.percentage}%</span> drop
+                </div>
+                ${event.description ? `<div class="crash-description">${event.description}</div>` : ''}
+                ${contextHTML}
+                ${linksHTML}
+              </div>
+            `;
+          }).join('');
+        } else {
+          popupContent.innerHTML = '<div>No significant historical crashes recorded for this month.</div>';
+        }
+        
+        // Show modal overlay and popup
+        modalOverlay.classList.add('active');
+        popupInfo.classList.add('active');
+        
+        // Add scroll lock to body
+        document.body.style.overflow = 'hidden';
+      }
+      
+      // Function to close popup
+      function closePopup() {
+        modalOverlay.classList.remove('active');
+        popupInfo.classList.remove('active');
+        
+        // Remove scroll lock
+        document.body.style.overflow = '';
+      }
+      
+      // Event listeners for closing popup
+      popupClose.addEventListener('click', closePopup);
+      modalOverlay.addEventListener('click', closePopup);
+      
+      // Close popup on escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closePopup();
+        }
+      });
+      
+      // Prevent closing when clicking inside popup
+      popupInfo.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+      
+      // Bitcoin price particles animation
+      function initBitcoinCanvas() {
+        const canvas = document.getElementById('bitcoinCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Bitcoin symbols
+        const symbols = ['🩸'];
+        const particles = [];
+        
+        // Create particles
+        for (let i = 0; i < 100; i++) {
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 20 + 10,
+            speed: Math.random() * 1 + 0.75,
+            symbol: symbols[Math.floor(Math.random() * symbols.length)],
+            opacity: Math.random() * 0.5 + 0.1
+          });
+        }
+        
+        // Animation loop
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw particles
+          particles.forEach(particle => {
+            ctx.font = `${particle.size}px Arial`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${particle.opacity})`;
+            ctx.fillText(particle.symbol, particle.x, particle.y);
+            
+            // Move particles down
+            particle.y += particle.speed;
+            
+            // Reset particles that go offscreen
+            if (particle.y > canvas.height) {
+              particle.y = -particle.size;
+              particle.x = Math.random() * canvas.width;
+            }
+          });
+          
+          requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        });
+      }
+    });
+  </script>
+</body>
+</html>
