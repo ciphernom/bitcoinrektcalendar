@@ -2,8 +2,6 @@
 
 ## Bitcoin Extreme Crash Risk Forecast
 
-![Calendar of Rekt Screenshot](https://user-images.githubusercontent.com/your-username/bitcoinrektcalendar/assets/screenshot.png)
-
 **Live demo**: [Calendar of Rekt](https://ciphernom.github.io/bitcoinrektcalendar/)
 
 ## What is this?
