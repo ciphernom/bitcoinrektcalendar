@@ -2090,7 +2090,9 @@ class NaiveBayesClassifier {
     
     // Store price data for feature extraction
     this.priceData = priceData;
+  //  console.log("price data:" + priceData);
     this.priceTrends = this.extractPriceTrends(priceData);
+    
     
     // Enhanced features
     this.useBigrams = true;
@@ -2195,7 +2197,9 @@ class NaiveBayesClassifier {
       'breakthrough': 0.8, 'milestone': 0.7, 'achievement': 0.7,
       'inflow': 0.7, 'advance': 0.6, 'advances': 0.6, 'adoption': 0.7,
       'approved': 0.7, 'approval': 0.7, 'approve': 0.7, 'viability': 0.6,
-      'viable': 0.6, 'momentum': 0.6, 'catalyst': 0.6, 'boost': 0.7
+      'viable': 0.6, 'momentum': 0.6, 'catalyst': 0.6, 'boost': 0.7,
+      'could': 0.3,  'reach': 0.4,   'predicts': 0.4,   'target': 0.5,
+      'forecast': 0.4,   'expected': 0.3,  'potential': 0.3,
     };
     
     // Price movement patterns
@@ -2322,7 +2326,12 @@ class NaiveBayesClassifier {
       'metric\\s+shows': 0.6,
       'what\\s+if': 0.0,
       'future\\s+of': 0.5,
-      'better\\s+cryptocurrency': 0.6
+      'better\\s+cryptocurrency': 0.6,
+      'could\\s+hit\\s+\\$?\\d+k?': 0.7,
+      'price\\s+target\\s+\\$?\\d+k?': 0.6,
+      'predicts\\s+\\$?\\d+k?': 0.6,
+      'forecast\\s+\\$?\\d+k?': 0.6,
+      'expected\\s+to\\s+reach\\s+\\$?\\d+k?': 0.7,
     };
     
     // High-value tokens that strongly indicate sentiment in crypto headlines
@@ -2439,6 +2448,7 @@ class NaiveBayesClassifier {
   
   extractPriceTrends(priceData) {
     if (!priceData || !Array.isArray(priceData) || priceData.length === 0) {
+    //    console.log("if tripped in extractPriceTrends - priceData "+priceData);
       return {
         shortTerm: 0,
         mediumTerm: 0,
@@ -3054,6 +3064,13 @@ class NaiveBayesClassifier {
       matches += 1.5;
     }
     
+    //special case for predictive + price combo aka moonbois / planb etc
+    if (/could|might|expected|predict|forecast/i.test(lowercaseText) && 
+        /(\$\d+k?|\d+\s*dollars)/i.test(lowercaseText)) {
+      ruleBasedSentiment += 0.5; // Boost for predictive + price combo
+      matches += 1.0;
+    }
+    
     // 3. Apply market context adjustments based on price data
     let contextAdjustment = 0;
     let contextWeight = 0;
@@ -3283,6 +3300,7 @@ class NaiveBayesClassifier {
 
 // Function to analyze crypto headlines using the NBC
 function analyzeHeadlinesWithNBC(headlines, bitcoinData) {
+ //  console.log("bitcoinData:" + bitcoinData);
   // Process price data if available
   let processedPriceData = null;
   if (bitcoinData && bitcoinData.length > 0) {
@@ -3296,6 +3314,7 @@ function analyzeHeadlinesWithNBC(headlines, bitcoinData) {
   }
   
   // Initialize classifier with price data
+  //console.log("processedPriceData:"+processedPriceData)
   const classifier = new NaiveBayesClassifier(processedPriceData);
   
   // Calculate price change (still needed for compatibility with existing code)
@@ -3486,29 +3505,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 2500);
   
   // Fetch Bitcoin data and Sentiment analysis simultaneously
-  Promise.all([
-    fetchBitcoinData(),
-    fetchSentimentAnalysis()
-  ])
-  .then(([btcData, sentimentData]) => {
+fetchBitcoinData()
+  .then(btcData => {
+    // Store Bitcoin data in application state
+    state.bitcoinData = btcData;
+   // console.log("btcData assigned:" + btcData);
+    
+    // Now fetch sentiment analysis, which can use state.bitcoinData
+    return fetchSentimentAnalysis();
+  })
+  .then(sentimentData => {
+    // Store sentiment data in application state
+    state.sentimentData = sentimentData;
+        // Add data summary
+    const dataSummary = document.getElementById('data-summary');
+    if (state.bitcoinData && state.bitcoinData.length > 0) {
+      dataSummary.textContent = `Analysis based on ${state.bitcoinData.length.toLocaleString()} data points spanning from ${state.bitcoinData[0].date.toLocaleDateString()} to ${state.bitcoinData[state.bitcoinData.length-1].date.toLocaleDateString()}.`;
+    } else {
+      dataSummary.textContent = 'Analysis data not available.';
+    }
     // Clear loading interval if still running
     clearInterval(loadingInterval);
-    
-    // Store data in application state
-    state.bitcoinData = btcData;
-    state.sentimentData = sentimentData;
     
     // Calculate risk by month for default timeframe
     calculateRiskForAllTimeframes();
     
     // Find historical crashes from the data
-    state.historicalCrashes = findHistoricalCrashes(btcData);
+    state.historicalCrashes = findHistoricalCrashes(state.bitcoinData);
     
     // Identify most severe crashes per month for YouTuber mode
     identifyMostSevereCrashes(state.historicalCrashes);
     
     // Generate timeline data for all years
-    generateTimelineData(btcData);
+    generateTimelineData(state.bitcoinData);
     
     // Render the calendar
     renderCalendar(state.riskByMonth[30], state.historicalCrashes);
@@ -3533,10 +3562,7 @@ document.addEventListener('DOMContentLoaded', function() {
       updateYoutuberCrashData(currentMonthIndex + 1);
     }, 1000);
     
-    // Add data summary
-    const dataSummary = document.getElementById('data-summary');
-    dataSummary.textContent = `Analysis based on ${btcData.length.toLocaleString()} data points spanning from ${btcData[0].date.toLocaleDateString()} to ${btcData[btcData.length-1].date.toLocaleDateString()}.`;
-    
+
     // Show additional sections
     setTimeout(() => {
       portfolioCalculator.style.display = 'block';
@@ -3588,6 +3614,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // Perform sentiment analysis on the headlines using NBC
+    //  console.log("state.bitcoinData"+state.bitcoinData);
       const sentimentData = analyzeHeadlinesWithNBC(newsData, state.bitcoinData);
       
       return sentimentData;
@@ -5282,4 +5309,5 @@ window.addEventListener('scroll', function() {
   
 </body>
 </html>
+
 
