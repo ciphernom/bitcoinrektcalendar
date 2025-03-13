@@ -301,13 +301,40 @@
       position: absolute;
       top: -40px;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      padding: 5px 10px;
-      border-radius: 5px;
+      background: rgba(20, 20, 20, 0.85);
+      padding: 6px 12px;
+      border-radius: 6px;
       font-weight: bold;
-      transition: left 1.5s cubic-bezier(0.23, 1, 0.32, 1);
+      font-size: 1.1rem;
+      transition: left 1.5s cubic-bezier(0.23, 1, 0.32, 1), background-color 1s ease;
+      border: 1px solid rgba(247, 147, 26, 0.5);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      color: #fff;
+    }
+    /* Color transitions based on risk percentage */
+    .gauge-value.high-risk {
+      background: rgba(255, 59, 48, 0.85);
     }
 
+    .gauge-value.medium-risk {
+      background: rgba(255, 149, 0, 0.85);
+    }
+
+    .gauge-value.low-risk {
+      background: rgba(52, 199, 89, 0.85);
+    }
+
+    .prominent-percentage.high-risk {
+      color: #ff3b30;
+    }
+
+    .prominent-percentage.medium-risk {
+      color: #ff9500;
+    }
+
+    .prominent-percentage.low-risk {
+      color: #34c759;
+    }
     .current-month {
       text-align: center;
       margin-top: 1rem;
@@ -1861,6 +1888,16 @@
   border-radius: 4px;
   margin-right: 8px;
 }
+.prominent-percentage {
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--btc-orange);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  animation: fadeIn 1s ease;
+  transition: color 1s ease;
+}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
@@ -1900,6 +1937,9 @@
     <!-- Risk Temperature Gauge -->
     <div class="risk-temperature" id="riskTemperature">
       <div class="gauge-title">Current Month Crash Risk Temperature</div>
+      <!-- Added prominent percentage display -->
+      <div class="prominent-percentage" id="prominentPercentage">--.--%</div>
+      
       <div class="gauge-container">
         <div class="gauge">
           <div class="gauge-fill" id="gaugeCurrentFill"></div>
@@ -1914,6 +1954,7 @@
       </div>
       <div class="current-month" id="currentMonth"></div>
     </div>
+
 
     <!-- Timeframe tabs -->
     <div class="timeframe-tabs">
@@ -3548,10 +3589,7 @@ fetchBitcoinData()
     
     // Animate the gauge fill
     setTimeout(() => {
-      gaugeCurrentFill.style.width = `${riskPercentage}%`;
-      gaugeMarker.style.left = `${riskPercentage}%`;
-      gaugeValue.style.left = `${riskPercentage}%`;
-      gaugeValue.textContent = `${riskPercentage}%`;
+      updateGauge(riskPercentage);
       
       // Also set YouTuber mode data
       youtuberRiskPercentage.textContent = `${riskPercentage}%`;
@@ -4410,6 +4448,37 @@ fetchBitcoinData()
     return null;
   }
 
+    function updateGauge(riskPercentage) {
+      // Update existing gauge elements
+      gaugeCurrentFill.style.width = `${riskPercentage}%`;
+      gaugeMarker.style.left = `${riskPercentage}%`;
+      gaugeValue.style.left = `${riskPercentage}%`;
+      gaugeValue.textContent = `${riskPercentage}%`;
+      
+      // Update the prominent percentage
+      const prominentPercentage = document.getElementById('prominentPercentage');
+      prominentPercentage.textContent = `${riskPercentage}%`;
+      
+      // Apply color classes based on risk level
+      const risk = parseFloat(riskPercentage);
+      
+      // Remove existing classes
+      gaugeValue.classList.remove('high-risk', 'medium-risk', 'low-risk');
+      prominentPercentage.classList.remove('high-risk', 'medium-risk', 'low-risk');
+      
+      // Add appropriate class based on risk level
+      if (risk >= 70) {
+        gaugeValue.classList.add('high-risk');
+        prominentPercentage.classList.add('high-risk');
+      } else if (risk >= 40) {
+        gaugeValue.classList.add('medium-risk');
+        prominentPercentage.classList.add('medium-risk');
+      } else {
+        gaugeValue.classList.add('low-risk');
+        prominentPercentage.classList.add('low-risk');
+      }
+    }
+
   // Function to generate context for crashes based on sentiment analysis
   function generateCrashContext(date, percentageDrop) {
     const year = date.getFullYear();
@@ -5152,10 +5221,7 @@ function preparePredictionChartData(months) {
         const currentMonthRisk = timeframeRisk[currentMonthIndex + 1];
         const riskPercentage = (currentMonthRisk * 100).toFixed(1);
         
-        gaugeCurrentFill.style.width = `${riskPercentage}%`;
-        gaugeMarker.style.left = `${riskPercentage}%`;
-        gaugeValue.style.left = `${riskPercentage}%`;
-        gaugeValue.textContent = `${riskPercentage}%`;
+        updateGauge(riskPercentage);
         
         // Update YouTuber mode data
         youtuberRiskPercentage.textContent = `${riskPercentage}%`;
@@ -5309,5 +5375,6 @@ window.addEventListener('scroll', function() {
   
 </body>
 </html>
+
 
 
