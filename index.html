@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   Calendar of Rekt
+  </title>
+   <script type="module" src="src/app.js"></script>
+   <script type="module" src="src/enhanced-model.js"></script>
+
+
+  <link rel="stylesheet" href="src/assets/styles/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.5/dist/jstat.min.js"></script>
+
+</head>
+ <body>
+  <div class="live-data-notice">
+   Live Data Connected
+  </div>
+  <div class="youtuber-mode-container">
+   <div class="youtuber-toggle" id="youtuberToggle">
+    YouTuber Mode
+   </div>
+  </div>
+  <header>
+   <div class="header-content">
+    <h1>
+     Calendar of Rekt
+    </h1>
+    <div class="subtitle">
+     Bitcoin Extreme Crash Risk Forecast
+    </div>
+    <nav class="header-nav">
+     <ul class="nav-menu">
+      <li>
+       <a class="nav-link" href="#riskTemperature">
+        Risk Gauge
+       </a>
+      </li>
+      <li>
+       <a class="nav-link" href="#calendar">
+        Calendar
+       </a>
+      </li>
+      <li>
+       <a class="nav-link" href="#portfolioCalculator">
+        Portfolio Risk
+       </a>
+      </li>
+      <li>
+       <a class="nav-link" href="#sentimentContainer">
+        Sentiment
+       </a>
+      </li>
+      <li>
+       <a class="nav-link" href="#rektLegends">
+        Rekt Legends
+       </a>
+      </li>
+      <li>
+       <a class="nav-link" href="#socialShare">
+        Share
+       </a>
+      </li>
+      <li>
+       <a class="nav-link" href="#" id="showChartBtn">
+        Validation Chart
+       </a>
+      </li>
+     </ul>
+    </nav>
+   </div>
+  </header>
+  <div class="container">
+   <div class="description">
+    <strong>
+     What are your chances of getting REKT this month?
+    </strong>
+    This visualization reveals the monthly probability of experiencing at least one extreme Bitcoin price crash (daily returns below the 1st percentile). Based on a comprehensive analysis of historical BTC price patterns using a Poisson-Gamma Bayesian model with seasonal adjustments.
+    <span style="font-style: italic; color: var(--btc-orange);">
+     <br/>
+     Click on any month to see historical crash events with detailed news &amp; analysis.
+    </span>
+   </div>
+   <!-- Risk Temperature Gauge -->
+   <div class="risk-temperature" id="riskTemperature">
+    <div class="gauge-title">
+     Current Month Crash Risk Temperature
+    </div>
+    <!-- Added prominent percentage display -->
+    <div class="prominent-percentage" id="prominentPercentage">
+     --.--%
+    </div>
+    <div class="gauge-container">
+     <div class="gauge">
+      <div class="gauge-fill" id="gaugeCurrentFill">
+      </div>
+      <div class="gauge-marker" id="gaugeMarker">
+       <div class="gauge-value" id="gaugeValue">
+       </div>
+      </div>
+     </div>
+     <div class="gauge-labels">
+      <div>
+       Low Risk
+      </div>
+      <div>
+       High Risk
+      </div>
+     </div>
+    </div>
+    <div class="current-month" id="currentMonth">
+    </div>
+   </div>
+   <!-- Timeframe tabs -->
+   <div class="timeframe-tabs">
+    <div class="timeframe-tab" data-days="90">
+     Next 90 Days
+    </div>
+    <div class="timeframe-tab active" data-days="30">
+     Next 30 Days
+    </div>
+    <div class="timeframe-tab" data-days="14">
+     Next 14 Days
+    </div>
+    <div class="timeframe-tab" data-days="7">
+     Next 7 Days
+    </div>
+    <div class="timeframe-tab" data-days="1">
+     Next 1 Day
+    </div>
+   </div>
+   <!-- Timeline slider -->
+   <div class="timeline-container">
+    <div class="timeline-title">
+     Historical Risk Timeline
+    </div>
+    <input class="timeline-slider" id="timelineSlider" max="2025" min="2013" type="range" value="2025"/>
+    <div class="timeline-labels">
+     <span>
+      2013
+     </span>
+     <span>
+      2025
+     </span>
+    </div>
+    <div class="timeline-value" id="timelineValue">
+     2025: Bitcoin's Risk Profile
+    </div>
+   </div>
+   <div id="loading">
+    <div class="loading-spinner">
+    </div>
+    <div class="loading-text">
+     Analyzing complete Bitcoin price history for statistical patterns...
+    </div>
+   </div>
+   <div class="calendar" id="calendar" style="display: none;">
+   </div>
+   <!-- Portfolio Risk Calculator -->
+   <div class="portfolio-calculator" id="portfolioCalculator" style="display: none;">
+    <div class="portfolio-title">
+     Calculate Your Personal Risk Exposure
+    </div>
+    <div class="portfolio-input">
+     <input id="portfolioInput" placeholder="Enter your Bitcoin holdings in USD" type="number"/>
+     <button id="calculateRisk">
+      Calculate
+     </button>
+    </div>
+    <div class="portfolio-results" id="portfolioResults" style="display: none;">
+     <div class="portfolio-amount" id="portfolioRiskAmount">
+      $0
+     </div>
+     <div class="portfolio-text" id="portfolioRiskText">
+      Enter your portfolio value to see potential losses based on historical crash data.
+     </div>
+    </div>
+   </div>
+   <!-- Sentiment Analysis -->
+   <div class="sentiment-container" id="sentimentContainer" style="display: none;">
+    <div class="sentiment-title">
+     Bitcoin Sentiment Analysis
+    </div>
+    <div class="sentiment-meter">
+     <div class="sentiment-needle" id="sentimentNeedle">
+     </div>
+    </div>
+    <div class="sentiment-labels">
+     <div>
+      Very Negative
+     </div>
+     <div>
+      Very Positive
+     </div>
+    </div>
+    <div class="sentiment-value" id="sentimentValue">
+     --
+    </div>
+    <div class="sentiment-text" id="sentimentText">
+     Loading...
+    </div>
+   </div>
+   <!-- Rekt Legends Section -->
+   <div class="rekt-legends" id="rektLegends" style="display: none;">
+    <div class="rekt-legends-title">
+     Legendary Bitcoin Crashes
+    </div>
+    <div class="legend-cards" id="legendCards">
+     <!-- Legend cards will be added here dynamically -->
+    </div>
+   </div>
+   <!-- Social Sharing Section -->
+   <div class="social-share" id="socialShare" style="display: none;">
+    <div class="social-title">
+     Share Your Crash Risk
+    </div>
+    <div class="social-text">
+     Let your followers know about the current Bitcoin crash risk! Share this analysis to help others prepare for potential market volatility.
+    </div>
+    <div class="share-buttons">
+     <div class="share-button X" id="XShare">
+      Share on X
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="data-info" id="data-info" style="display: none;">
+   <div class="data-info-content">
+    <p>
+     <strong>
+      METHODOLOGY:
+     </strong>
+     Based on comprehensive Bitcoin price data. Forecast period:
+     <span id="forecastPeriod">
+      30
+     </span>
+     days.
+    </p>
+    <p id="data-summary">
+    </p>
+
+    <p style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.7;">
+     © Calendar of Rekt 2025 | Not financial advice | Past performance does not guarantee future results
+    </p>
+   </div>
+  </div>
+  <!-- Modal overlay for popup background -->
+  <div class="modal-overlay" id="modalOverlay">
+  </div>
+  <!-- Reusable popup container -->
+  <div class="popup-info" id="popupInfo">
+   <div class="popup-close" id="popupClose">
+   </div>
+   <div class="popup-title" id="popupTitle">
+   </div>
+   <div id="popupContent">
+   </div>
+   <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem; opacity: 0.7;">
+    Based on 1st percentile daily returns
+   </div>
+  </div>
+  <!-- YouTuber Mode -->
+  <div class="youtuber-mode" id="youtuberMode">
+   <div class="youtuber-close" id="youtuberClose">
+   </div>
+   <div class="youtuber-overlay">
+   </div>
+   <div class="youtuber-content">
+    <div class="youtuber-title">
+     Calendar of Rekt
+    </div>
+    <div class="youtuber-subtitle">
+     Bitcoin Crash Risk Unleashed
+    </div>
+    <div class="youtuber-risk-display">
+     <div class="youtuber-month" id="youtuberMonth">
+      Loading...
+     </div>
+     <div class="youtuber-risk-wrapper">
+      <div class="youtuber-risk-percentage" id="youtuberRiskPercentage">
+       --.--%
+      </div>
+      <div class="youtuber-risk-label">
+       Crash Probability
+      </div>
+      <div class="youtuber-progress-container">
+       <div class="youtuber-progress-fill" id="youtuberProgressFill" style="width: 0%;">
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="youtuber-description" id="youtuberDescription">
+     The odds of an extreme Bitcoin price crash in the next 30 days, based on historical chaos and market mayhem.
+    </div>
+    <div class="youtuber-crash-highlight" id="youtuberCrashHighlight">
+     <div class="youtuber-crash-title">
+      Biggest Historical Crash
+     </div>
+     <div class="youtuber-crash-date" id="youtuberCrashDate">
+      No historical crashes
+     </div>
+     <div class="youtuber-crash-percentage" id="youtuberCrashPercentage">
+     </div>
+     <div class="youtuber-crash-context" id="youtuberCrashContext">
+      No significant historical crash data available for this month.
+     </div>
+    </div>
+   </div>
+  </div>
+  <!-- Bitcoin price particles in background -->
+  <canvas id="bitcoinCanvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; opacity: 0.15;">
+  </canvas>
+  <!-- Chart Popup Container -->
+  <div class="popup-info" id="chartPopup" style="max-width: 90%; width: 1100px;">
+   <div class="popup-close" id="chartPopupClose">
+   </div>
+   <div class="popup-title">
+    Model Prediction vs Actual Crashes
+   </div>
+   <div class="chart-wrapper" style="height: 450px; margin-bottom: 2rem;">
+    <canvas id="crashPredictionChart">
+    </canvas>
+   </div>
+   <div class="chart-legend" style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;">
+    <div class="legend-item">
+     <span class="legend-color" style="background: rgba(75, 192, 192, 0.5);">
+     </span>
+     Bitcoin Price
+    </div>
+    <div class="legend-item">
+     <span class="legend-color" style="background: rgba(255, 99, 132, 0.5);">
+     </span>
+     Crash Probability
+    </div>
+    <div class="legend-item">
+     <span class="legend-color" style="background: #ff3b30;">
+     </span>
+     Actual Crashes
+    </div>
+   </div>
+  </div>
+ </body>
+</html>
