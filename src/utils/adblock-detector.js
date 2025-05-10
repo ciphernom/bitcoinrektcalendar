@@ -1034,12 +1034,18 @@ window.AdblockDetector = {};
     document.body.style.overflow = '';
   }
 
-  // Initialize the adblock detector
-  // Expose the initialize function to the global object
+// First, define all functions on the global object
   window.AdblockDetector.initialize = initialize;
-  
-  // You might want to expose other functions as needed
   window.AdblockDetector.checkPaymentStatus = checkPaymentStatus;
 
-  initialize();
+  // Do NOT call initialize here - removing the automatic initialization
+  // initialize();
 })();
+
+// Add a direct initialize call to the global scope instead
+// This ensures the function exists before being called elsewhere
+if (typeof window.AdblockDetector !== 'undefined' && typeof window.AdblockDetector.initialize === 'function') {
+  window.AdblockDetector.initialize();
+} else {
+  console.error('AdblockDetector failed to initialize properly');
+}
