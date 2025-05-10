@@ -2731,3 +2731,49 @@
   color: white !important;
   font-weight: normal !important;
 }
+/* Adblock detection overlay */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.adblock-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.5s;
+}
+
+.adblock-message {
+  max-width: 600px;
+  background-color: #1a1a1a;
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid #f7931a;
+  box-shadow: 0 0 20px rgba(247, 147, 26, 0.3);
+  text-align: center;
+  color: white;
+}
+
+#adblock-refresh {
+  background: #f7931a;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 20px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+#adblock-refresh:hover {
+  background-color: #f8a93c;
+}
