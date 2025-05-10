@@ -202,9 +202,9 @@ window.AdblockDetector = {};
       detectionMethods.adsenseCheck, 
       detectionMethods.heightCheck
     ]).then(results => {
-      // If any detection method returns true, consider adblock detected
-      const adblockDetected = results.some(result => result === true);
-      
+      // If multiple detection method returns true, consider adblock detected
+      const adblockDetected = results.filter(result => result === true).length >= 2;
+
       if (adblockDetected) {
         state.adblockDetected = true;
         if (CONFIG.debug) console.log("[Adblock Detector] Adblock detected");
