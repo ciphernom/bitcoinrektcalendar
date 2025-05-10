@@ -17,7 +17,7 @@
     maxDismissals: 3,
     paymentValidDays: 365, // 1 full year access
     bitcoinPayment: {
-      address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh", // Example valid address format
+      address: "bc1pfjhf946lwtjvzkkl965tdva3unvpa2n8plspns4aaej3pr6fuypsrx6svs", 
       amountUSD: 9.99,
       btcAmount: 0.0002, // Will be updated via API if possible
       message: "CalendarOfRekt Access"
