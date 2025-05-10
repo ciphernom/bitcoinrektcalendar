@@ -5,7 +5,8 @@
  * A robust adblock detection system with Bitcoin payment option
  * with blockchain verification and cross-browser compatibility.
  */
-
+// Create a global object to expose functions
+window.AdblockDetector = {};
 // Self-executing anonymous function to avoid global scope pollution
 (function() {
   // Configuration
@@ -1034,5 +1035,9 @@
   }
 
   // Initialize the adblock detector
-  initialize();
+  // Expose the initialize function to the global object
+  window.AdblockDetector.initialize = initialize;
+  
+  // You might want to expose other functions as needed
+  window.AdblockDetector.checkPaymentStatus = checkPaymentStatus;
 })();
