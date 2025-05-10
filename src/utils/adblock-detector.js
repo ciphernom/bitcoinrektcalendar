@@ -1040,4 +1040,6 @@ window.AdblockDetector = {};
   
   // You might want to expose other functions as needed
   window.AdblockDetector.checkPaymentStatus = checkPaymentStatus;
+
+  initialize();
 })();
