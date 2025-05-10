@@ -24,6 +24,9 @@ import * as Statistics from './utils/statistics.js';
 import * as Formatting from './utils/formatting.js';
 import * as Accessibility from './utils/accessibility.js';
 
+// Import adblock detector
+import * as AdblockDetector from './utils/adblock-detector.js';
+
 // Global state (shared across components)
 export const state = {
   bitcoinData: [],
@@ -132,6 +135,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         Gauge.updateGauge(riskPercentage, credibleInterval);
       }
     }, 200);
+
+    // Initialize adblock detector
+    AdblockDetector.initialize();
 
     
     // Initialize other components
