@@ -741,9 +741,9 @@ window.AdblockDetector = {};
       
       <p style="margin: 1rem 0; font-size: 1rem; line-height: 1.5;">Send <span id="btc-amount-display" style="font-weight: 600; color: ${CONFIG.appearance.primaryColor};">${paymentAmount}</span> BTC (≈$${CONFIG.bitcoinPayment.amountUSD}) to gain access for 1 year with your adblocker enabled.</p>
       
-      <div id="qr-code-container" style="background: white; width: 210px; height: 210px; margin: 1.5rem auto; padding: 5px; border-radius: 8px; display: flex; justify-content: center; align-items: center;">
-        <img src="${CONFIG.bitcoinPayment.qrCodeBase64}" alt="Bitcoin Payment QR Code" style="width: 200px; height: 200px;" />
-      </div>
+<div id="qr-code-container" style="background: white; width: 210px; height: 210px; margin: 1.5rem auto; padding: 5px; border-radius: 8px; display: flex; justify-content: center; align-items: center;">
+  <img src="https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=bitcoin:${paymentAddress}?amount=${paymentAmount}&message=${paymentMessage}" alt="Bitcoin Payment QR Code" style="width: 200px; height: 200px;" />
+</div>
       
       <div style="margin: 1.5rem 0; position: relative;">
         <div style="display: flex; align-items: center; background: ${CONFIG.appearance.darkBackground}; padding: 0.75rem; border-radius: 6px; border: 1px solid ${CONFIG.appearance.borderColor};">
