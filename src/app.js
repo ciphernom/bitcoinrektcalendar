@@ -18,6 +18,7 @@ import * as Portfolio from './components/portfolio.js';
 import * as Sentiment from './components/sentiment.js';
 import * as RektLegends from './components/rekt-legends.js'; 
 import * as SocialShare from './components/social-share.js'; 
+import * as RektBot from './components/rektbot.js';
 
 // Import utilities
 import * as Statistics from './utils/statistics.js';
@@ -135,9 +136,29 @@ document.addEventListener('DOMContentLoaded', async function() {
         Gauge.updateGauge(riskPercentage, credibleInterval);
       }
     }, 200);
-
-    // Initialize adblock detector
-    AdblockDetector.initialize();
+    
+  // with proper error handling
+  try {
+    if (typeof window.AdblockDetector !== 'undefined' && typeof window.AdblockDetector.initialize === 'function') {
+      window.AdblockDetector.initialize();
+    } else if (typeof AdblockDetector !== 'undefined' && typeof AdblockDetector.initialize === 'function') {
+      AdblockDetector.initialize();
+    } else {
+      console.warn('AdblockDetector not available yet, will try again in 1 second');
+      // Retry after a delay
+      setTimeout(function() {
+        if (typeof window.AdblockDetector !== 'undefined' && typeof window.AdblockDetector.initialize === 'function') {
+          window.AdblockDetector.initialize();
+        } else if (typeof AdblockDetector !== 'undefined' && typeof AdblockDetector.initialize === 'function') {
+          AdblockDetector.initialize();
+        } else {
+          console.warn('AdblockDetector still not available after delay, skipping initialization');
+        }
+      }, 1000);
+    }
+  } catch (e) {
+    console.warn('Error initializing AdblockDetector, continuing without it:', e);
+  }
 
     
     // Initialize other components
@@ -146,6 +167,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       await Portfolio.initialize();
       await RektLegends.initialize(); // Initialize new Rekt Legends component
       await SocialShare.initialize(); // Initialize new Social Share component
+      
+
       
       // 8. Fetch sentiment data
       state.sentimentData = await DataService.fetchSentimentAnalysis();
@@ -235,7 +258,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       Gauge.updateGauge(riskPercentage);
     }
     });
-    
+        await RektBot.initialize();
   } catch (error) {
     console.error('Error initializing application:', error);
     const loading = document.getElementById('loading');
