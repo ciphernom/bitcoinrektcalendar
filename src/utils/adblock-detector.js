@@ -728,7 +728,6 @@ window.AdblockDetector = {};
     const paymentAmount = CONFIG.bitcoinPayment.btcAmount || 0.0002; // Fallback amount if API fails
     const paymentAddress = CONFIG.bitcoinPayment.address;
     const paymentMessage = encodeURIComponent(CONFIG.bitcoinPayment.message);
-    const paymentAmount = CONFIG.bitcoinPayment.btcAmount || 0.0002;
     const btcURI = `bitcoin:${paymentAddress}?amount=${paymentAmount}&message=${paymentMessage}`;
     const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(btcURI)}&choe=UTF-8`;
 
