@@ -1,9 +1,10 @@
 /**
  * Calendar of Rekt - Production-Ready Bitcoin Adblock Detector
- * Version 1.1.0
+ * Version 2.0.0
  * 
  * A robust adblock detection system with Bitcoin payment option
- * with blockchain verification and cross-browser compatibility.
+ * with blockchain verification, cross-browser compatibility,
+ * and advanced statistical detection methods.
  */
 // Create a global object to expose functions
 window.AdblockDetector = {};
@@ -17,6 +18,11 @@ window.AdblockDetector = {};
     dismissExpirationHours: 24,
     maxDismissals: 3,
     paymentValidDays: 365, // 1 full year access
+    detectionThreshold: 0.75, // Probability threshold for detection
+    detectionConfidence: 0.90, // Minimum confidence level required
+    minDetectionRuns: 3, // Minimum number of detection methods that must run
+    requiredPositives: 2, // Required positive results to confirm adblock
+    verificationDelay: 1500, // Delay before verification recheck
     bitcoinPayment: {
       address: "bc1pfjhf946lwtjvzkkl965tdva3unvpa2n8plspns4aaej3pr6fuypsrx6svs", 
       amountUSD: 9.99,
@@ -50,6 +56,8 @@ window.AdblockDetector = {};
   const state = {
     detectionComplete: false,
     adblockDetected: false,
+    adblockProbability: 0,
+    detectionConfidence: 0,
     paymentVerified: false,
     currentBtcPrice: null,
     lastPriceCheck: 0,
@@ -59,6 +67,141 @@ window.AdblockDetector = {};
     storageAvailable: checkStorageAvailability(),
     phantomInstalled: typeof window.bitcoin !== 'undefined'
   };
+
+  /**
+   * Beta-Binomial Conjugate Model for Adblock Detection
+   * @param {number} initialAlpha - Alpha parameter for prior beta distribution
+   * @param {number} initialBeta - Beta parameter for prior beta distribution
+   * @returns {Object} - Beta-Binomial detector object
+   */
+  function BetaBinomialDetector(initialAlpha = 1.5, initialBeta = 3.5) {
+    // Prior distribution parameters
+    let alpha = initialAlpha;
+    let beta = initialBeta;
+    let detectionThreshold = CONFIG.detectionThreshold;
+    
+    /**
+     * Update the beta distribution with a new test result
+     * @param {boolean} result - True if test indicates adblock
+     * @param {number} weight - Confidence weight of this test (default 1.0)
+     */
+    function updateDistribution(result, weight = 1.0) {
+      // Only accept valid boolean results
+      if (typeof result === 'boolean') {
+        if (result) {
+          alpha += weight;  // Add weight to alpha if adblock detected
+        } else {
+          beta += weight;   // Add weight to beta if no adblock detected
+        }
+      }
+    }
+    
+    /**
+     * Calculate the mean of the current beta distribution
+     * This represents our current best estimate of adblock probability
+     */
+    function getMean() {
+      return alpha / (alpha + beta);
+    }
+    
+    /**
+     * Calculate the mode of the current beta distribution
+     * This represents the most likely value
+     */
+    function getMode() {
+      // Mode = (alpha - 1) / (alpha + beta - 2) if alpha, beta > 1
+      return alpha > 1 && beta > 1 ? (alpha - 1) / (alpha + beta - 2) : 0;
+    }
+    
+    /**
+     * Calculate the variance of the current beta distribution
+     * This represents our uncertainty
+     */
+    function getVariance() {
+      return (alpha * beta) / (Math.pow(alpha + beta, 2) * (alpha + beta + 1));
+    }
+    
+    /**
+     * Calculate credible interval (Bayesian confidence interval)
+     * @param {number} credibleLevel - Confidence level (0-1, default 0.95)
+     */
+    function getCredibleInterval(credibleLevel = 0.95) {
+      // Using regularized incomplete beta function approximation
+      const mean = getMean();
+      const variance = getVariance();
+      const stdDev = Math.sqrt(variance);
+      
+      // For Beta distribution, we'll use a normal approximation when alpha, beta > 5
+      if (alpha > 5 && beta > 5) {
+        const z = credibleLevel === 0.95 ? 1.96 : 
+                 (credibleLevel === 0.99 ? 2.58 : 1.645);
+                 
+        return {
+          lower: Math.max(0, mean - z * stdDev),
+          upper: Math.min(1, mean + z * stdDev)
+        };
+      } else {
+        // For smaller alpha, beta use an approximation
+        // For a better implementation we'd use a beta inverse CDF function
+        const approxWidth = Math.sqrt(variance) * 
+          (credibleLevel === 0.95 ? 2.2 : 
+           credibleLevel === 0.99 ? 3.1 : 1.8);
+           
+        return {
+          lower: Math.max(0, mean - approxWidth),
+          upper: Math.min(1, mean + approxWidth)
+        };
+      }
+    }
+    
+    /**
+     * Set custom detection threshold
+     * @param {number} threshold - New threshold value (0-1)
+     */
+    function setDetectionThreshold(threshold) {
+      if (threshold >= 0 && threshold <= 1) {
+        detectionThreshold = threshold;
+      }
+    }
+    
+    /**
+     * Get the current parameter values
+     */
+    function getParameters() {
+      return { alpha, beta };
+    }
+    
+    /**
+     * Get the final detection decision and confidence metrics
+     * @param {number} threshold - Detection threshold override
+     */
+    function getResult(threshold = null) {
+      const actualThreshold = threshold !== null ? threshold : detectionThreshold;
+      const probability = getMean();
+      const ci = getCredibleInterval(0.95);
+      const confidenceWidth = ci.upper - ci.lower;
+      
+      return {
+        adblockDetected: probability > actualThreshold,
+        probability: probability,
+        confidenceInterval: ci,
+        uncertainty: confidenceWidth,
+        // A measure of how certain we are of our detection
+        detectionConfidence: 1 - confidenceWidth
+      };
+    }
+    
+    return {
+      updateDistribution,
+      getMean,
+      getMode,
+      getVariance,
+      getCredibleInterval,
+      getParameters,
+      setDetectionThreshold,
+      getResult
+    };
+  }
 
   /**
    * Main initialization function
@@ -175,7 +318,44 @@ window.AdblockDetector = {};
   }
 
   /**
-   * Robust adblock detection using multiple methods
+   * Get browser-specific detection adjustments
+   */
+  function getBrowserAdjustments() {
+    const browser = state.browserInfo;
+    const adjustments = {
+      disableTests: [],
+      thresholdAdjustment: 0,
+      confidenceAdjustment: 0,
+      additionalVerification: false,
+      verificationDelay: CONFIG.verificationDelay
+    };
+    
+    // Browser specific adjustments to reduce false positives
+    if (browser.browser === "Safari") {
+      // Safari has content blocking that can cause false positives
+      adjustments.disableTests = ['networkRequest'];
+      adjustments.thresholdAdjustment = 0.1; // Higher threshold
+      adjustments.additionalVerification = true;
+      adjustments.verificationDelay = 2000; // Longer verification delay
+    } else if (browser.browser === "Firefox") {
+      // Firefox can have built-in tracking protection
+      adjustments.disableTests = ['networkRequest'];
+      adjustments.thresholdAdjustment = 0.05; // Slightly higher threshold
+    } else if (browser.browser === "Edge") {
+      adjustments.thresholdAdjustment = 0.03;
+    }
+    
+    // Mobile devices should have higher thresholds as they often have built-in blockers
+    if (state.deviceType.isMobile || state.deviceType.isTablet) {
+      adjustments.thresholdAdjustment += 0.05;
+      adjustments.additionalVerification = true;
+    }
+    
+    return adjustments;
+  }
+
+  /**
+   * Robust adblock detection using multiple methods and statistical analysis
    */
   function detectAdblock() {
     // Don't run detection twice
@@ -188,32 +368,172 @@ window.AdblockDetector = {};
       if (CONFIG.debug) console.log("[Adblock Detector] Development environment detected, bypassing");
       return;
     }
-
-    // Use multiple detection methods for better accuracy
-    const detectionMethods = {
-      baitElements: detectWithBaitElements(),
-      adsenseCheck: checkAdsenseBlocked(),
-      heightCheck: checkAdDivHeight()
-    };
-
-    // We'll wait for all async methods to complete
-    Promise.all([
-      detectionMethods.baitElements, 
-      detectionMethods.adsenseCheck, 
-      detectionMethods.heightCheck
-    ]).then(results => {
-      // If a detection method returns true, consider adblock detected
-      const adblockDetected = results.filter(result => result === true).length >= 1;
-
-      if (adblockDetected) {
-        state.adblockDetected = true;
-        if (CONFIG.debug) console.log("[Adblock Detector] Adblock detected");
-        showAdblockOverlay();
+    
+    // Get browser-specific adjustments
+    const adjustments = getBrowserAdjustments();
+    
+    // Create a beta-binomial detector with a conservative prior
+    // Starting with a bias against detecting adblock (to reduce false positives)
+    const detector = BetaBinomialDetector(1.0, 3.0);
+    
+    // Apply browser-specific threshold adjustment
+    const detectionThreshold = CONFIG.detectionThreshold + adjustments.thresholdAdjustment;
+    detector.setDetectionThreshold(detectionThreshold);
+    
+    // Define all detection methods
+    const detectionMethods = [
+      {
+        name: 'baitElements',
+        fn: detectWithBaitElements,
+        weight: 1.0,
+        enabled: true
+      },
+      {
+        name: 'controlComparison',
+        fn: compareWithControlElement,
+        weight: 1.5, // Higher weight because this is more reliable
+        enabled: true
+      },
+      {
+        name: 'adsenseCheck',
+        fn: checkAdsenseBlocked,
+        weight: 1.0,
+        enabled: true
+      },
+      {
+        name: 'heightCheck',
+        fn: checkAdDivHeight,
+        weight: 0.8,
+        enabled: true
+      },
+      {
+        name: 'networkRequest',
+        fn: checkAdNetworkRequests,
+        weight: 0.8,
+        enabled: !adjustments.disableTests.includes('networkRequest')
+      },
+      {
+        name: 'scriptExecution',
+        fn: checkAdScriptExecution,
+        weight: 1.2,
+        enabled: !adjustments.disableTests.includes('scriptExecution')
+      }
+    ];
+    
+    // Track detection method results for logging
+    const methodResults = {};
+    let testsRun = 0;
+    
+    // Run all enabled detection methods
+    Promise.all(
+      detectionMethods
+        .filter(method => method.enabled)
+        .map(method => 
+          Promise.resolve(method.fn())
+            .then(result => {
+              testsRun++;
+              methodResults[method.name] = result;
+              // Update the beta distribution with the weighted result
+              detector.updateDistribution(result, method.weight);
+              return result;
+            })
+            .catch(error => {
+              if (CONFIG.debug) console.error(`[Adblock Detector] Error in detection method ${method.name}:`, error);
+              return null; // Don't count errored tests
+            })
+        )
+    ).then(() => {
+      // Only proceed if we have enough valid test results
+      if (testsRun < CONFIG.minDetectionRuns) {
+        if (CONFIG.debug) console.log(`[Adblock Detector] Not enough tests run (${testsRun}/${CONFIG.minDetectionRuns})`);
+        state.detectionComplete = true;
+        return;
+      }
+      
+      // Get the final detection result
+      const result = detector.getResult();
+      
+      // Store results in state
+      state.adblockProbability = result.probability;
+      state.detectionConfidence = result.detectionConfidence;
+      
+      if (CONFIG.debug) {
+        console.log("[Adblock Detector] Detection results:", methodResults);
+        console.log(`[Adblock Detector] Probability: ${(result.probability * 100).toFixed(2)}%`);
+        console.log(`[Adblock Detector] Confidence: ${(result.detectionConfidence * 100).toFixed(2)}%`);
+        console.log(`[Adblock Detector] 95% CI: [${(result.confidenceInterval.lower * 100).toFixed(2)}%, ${(result.confidenceInterval.upper * 100).toFixed(2)}%]`);
+      }
+      
+      // Initial detection
+      if (result.adblockDetected && result.detectionConfidence >= CONFIG.detectionConfidence) {
+        if (adjustments.additionalVerification) {
+          if (CONFIG.debug) console.log("[Adblock Detector] Initial detection positive, running verification");
+          
+          // Run verification after delay
+          setTimeout(() => verifyDetection(methodResults), adjustments.verificationDelay);
+        } else {
+          // No verification needed, consider adblock detected
+          state.adblockDetected = true;
+          if (CONFIG.debug) console.log("[Adblock Detector] Adblock detected with high confidence");
+          showAdblockOverlay();
+        }
       } else {
-        if (CONFIG.debug) console.log("[Adblock Detector] No adblock detected");
+        if (CONFIG.debug) {
+          if (!result.adblockDetected) {
+            console.log("[Adblock Detector] No adblock detected");
+          } else {
+            console.log("[Adblock Detector] Detection uncertain, confidence too low");
+          }
+        }
       }
       
       state.detectionComplete = true;
+    });
+  }
+
+  /**
+   * Verify detection result to reduce false positives
+   * @param {Object} initialResults - The initial detection method results
+   */
+  function verifyDetection(initialResults) {
+    if (CONFIG.debug) console.log("[Adblock Detector] Running verification check");
+    
+    // Focus on the most reliable tests for verification
+    const verificationMethods = [
+      { name: 'baitElements', fn: detectWithBaitElements, weight: 1.2 },
+      { name: 'controlComparison', fn: compareWithControlElement, weight: 1.5 },
+      { name: 'heightCheck', fn: checkAdDivHeight, weight: 1.0 }
+    ];
+    
+    // Create a new detector with a strong prior based on initial results
+    // This essentially gives us a "second opinion"
+    const verificationDetector = BetaBinomialDetector(1.0, 2.0);
+    
+    Promise.all(
+      verificationMethods.map(method => 
+        Promise.resolve(method.fn())
+          .then(result => {
+            verificationDetector.updateDistribution(result, method.weight);
+            return result;
+          })
+          .catch(() => null)
+      )
+    ).then(results => {
+      const verificationResult = verificationDetector.getResult(CONFIG.detectionThreshold + 0.05);
+      
+      if (CONFIG.debug) {
+        console.log("[Adblock Detector] Verification results:", results);
+        console.log(`[Adblock Detector] Verification probability: ${(verificationResult.probability * 100).toFixed(2)}%`);
+      }
+      
+      // Only confirm detection if verification agrees
+      if (verificationResult.adblockDetected) {
+        state.adblockDetected = true;
+        if (CONFIG.debug) console.log("[Adblock Detector] Adblock confirmed by verification");
+        showAdblockOverlay();
+      } else {
+        if (CONFIG.debug) console.log("[Adblock Detector] Verification failed, likely false positive");
+      }
     });
   }
 
@@ -229,6 +549,80 @@ window.AdblockDetector = {};
       window.location.hostname.includes('.test') ||
       window.location.hostname.includes('.local')
     );
+  }
+
+  /**
+   * Compare ad element with control element to reduce false positives
+   * @returns {Promise<boolean>} Whether adblock was detected
+   */
+  function compareWithControlElement() {
+    return new Promise(resolve => {
+      try {
+        // Create an ad-like bait element
+        const bait = document.createElement('div');
+        bait.className = 'ad-unit adsbox ad-placement';
+        bait.id = `bait-element-${Date.now()}`;
+        bait.innerHTML = '&nbsp;';
+        bait.style.cssText = 'position: absolute; top: -999px; height: 10px; width: 10px; opacity: 0.01;';
+        
+        // Create a control element with similar styling but non-ad class
+        const control = document.createElement('div');
+        control.className = 'control-element';
+        control.id = `control-element-${Date.now()}`;
+        control.innerHTML = '&nbsp;';
+        control.style.cssText = 'position: absolute; top: -999px; height: 10px; width: 10px; opacity: 0.01;';
+        
+        // Add both to document
+        document.body.appendChild(bait);
+        document.body.appendChild(control);
+        
+        setTimeout(() => {
+          try {
+            // Check if bait is affected but control is not
+            const baitStyle = window.getComputedStyle(bait);
+            const controlStyle = window.getComputedStyle(control);
+            
+            const baitBlocked = 
+              !document.body.contains(bait) || 
+              bait.offsetHeight === 0 || 
+              bait.clientHeight === 0 || 
+              baitStyle.display === 'none' || 
+              baitStyle.visibility === 'hidden' || 
+              baitStyle.opacity === '0' || 
+              parseFloat(baitStyle.opacity) === 0;
+              
+            const controlBlocked = 
+              !document.body.contains(control) || 
+              control.offsetHeight === 0 || 
+              control.clientHeight === 0 || 
+              controlStyle.display === 'none' || 
+              controlStyle.visibility === 'hidden' || 
+              controlStyle.opacity === '0' || 
+              parseFloat(controlStyle.opacity) === 0;
+            
+            // Only consider it adblock if bait is blocked but control is not
+            const result = baitBlocked && !controlBlocked;
+            
+            // Clean up elements
+            if (document.body.contains(bait)) document.body.removeChild(bait);
+            if (document.body.contains(control)) document.body.removeChild(control);
+            
+            resolve(result);
+          } catch (e) {
+            if (CONFIG.debug) console.error('[Adblock Detector] Error in control comparison:', e);
+            
+            // Clean up elements on error
+            if (document.body.contains(bait)) document.body.removeChild(bait);
+            if (document.body.contains(control)) document.body.removeChild(control);
+            
+            resolve(false);
+          }
+        }, 100);
+      } catch (e) {
+        if (CONFIG.debug) console.error('[Adblock Detector] Error setting up control comparison:', e);
+        resolve(false);
+      }
+    });
   }
 
   /**
@@ -329,7 +723,7 @@ window.AdblockDetector = {};
         );
         
         resolve(!adSenseLoaded);
-      }, 500);
+      }, 300);
     });
   }
 
@@ -357,6 +751,97 @@ window.AdblockDetector = {};
       } catch (e) {
         if (CONFIG.debug) console.error('[Adblock Detector] Height check error:', e);
         resolve(false);
+      }
+    });
+  }
+
+  /**
+   * Check for network requests to ad servers being blocked
+   * @returns {Promise<boolean>} Whether ad network requests are blocked
+   */
+  function checkAdNetworkRequests() {
+    return new Promise(resolve => {
+      // Create a pixel tracking image from a known ad network
+      const pixel = new Image();
+      let checked = false;
+      
+      // Set up load and error handlers
+      pixel.onload = function() {
+        if (!checked) {
+          checked = true;
+          resolve(false); // Not blocked
+        }
+      };
+      
+      pixel.onerror = function() {
+        if (!checked) {
+          checked = true;
+          resolve(true); // Blocked
+        }
+      };
+      
+      // Add a timeout in case neither event fires
+      setTimeout(() => {
+        if (!checked) {
+          checked = true;
+          resolve(true); // Assume blocked if no response
+        }
+      }, 300);
+      
+      // Set the source to trigger the request
+      // Using a known ad network pixel tracker
+      pixel.src = "https://pagead2.googlesyndication.com/pagead/gen_204?id=xbid&rnd=" + Math.random();
+    });
+  }
+
+  /**
+   * Check if script execution for ad-related scripts is blocked
+   * @returns {Promise<boolean>} Whether ad scripts are blocked
+   */
+  function checkAdScriptExecution() {
+    return new Promise(resolve => {
+      // Create a script with ad-related name
+      const script = document.createElement('script');
+      script.id = 'ad-script-detection';
+      script.type = 'text/javascript';
+      
+      // This variable will be set if script executes
+      window._adScriptExecuted = false;
+      
+      // Script content that will set a flag when executed
+      script.textContent = `
+        window._adScriptExecuted = true;
+        if (window._adScriptExecuted) {
+          document.dispatchEvent(new CustomEvent('adScriptExecuted'));
+        }
+      `;
+      
+      // Set up execution detection
+      let detected = false;
+      const detectExecution = function() {
+        if (!detected) {
+          detected = true;
+          resolve(!window._adScriptExecuted); // Blocked if not executed
+        }
+      };
+      
+      // Listen for our custom event
+      document.addEventListener('adScriptExecuted', function() {
+        if (!detected) {
+          detected = true;
+          resolve(false); // Not blocked
+        }
+      }, { once: true });
+      
+      // Check after timeout
+      setTimeout(detectExecution, 300);
+      
+      // Add the script to DOM
+      try {
+        document.head.appendChild(script);
+      } catch (e) {
+        if (CONFIG.debug) console.error('[Adblock Detector] Script execution check error:', e);
+        resolve(true); // Assume blocked if error
       }
     });
   }
@@ -1035,7 +1520,7 @@ window.AdblockDetector = {};
     document.body.style.overflow = '';
   }
 
-// First, define all functions on the global object
+  // First, define all functions on the global object
   window.AdblockDetector.initialize = initialize;
   window.AdblockDetector.checkPaymentStatus = checkPaymentStatus;
 
