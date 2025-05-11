@@ -111,7 +111,7 @@ export class EnhancedNLU {
           'what is seasonality',
           'how does the risk calculation work',
           'explain bayesian model',
-          'what's the meaning of extreme events',
+          'what\'s the meaning of extreme events',
           'help me understand cycle position'
         ]
       }
