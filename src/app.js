@@ -135,9 +135,29 @@ document.addEventListener('DOMContentLoaded', async function() {
         Gauge.updateGauge(riskPercentage, credibleInterval);
       }
     }, 200);
-
-    // Initialize adblock detector
-    AdblockDetector.initialize();
+    
+  // with proper error handling
+  try {
+    if (typeof window.AdblockDetector !== 'undefined' && typeof window.AdblockDetector.initialize === 'function') {
+      window.AdblockDetector.initialize();
+    } else if (typeof AdblockDetector !== 'undefined' && typeof AdblockDetector.initialize === 'function') {
+      AdblockDetector.initialize();
+    } else {
+      console.warn('AdblockDetector not available yet, will try again in 1 second');
+      // Retry after a delay
+      setTimeout(function() {
+        if (typeof window.AdblockDetector !== 'undefined' && typeof window.AdblockDetector.initialize === 'function') {
+          window.AdblockDetector.initialize();
+        } else if (typeof AdblockDetector !== 'undefined' && typeof AdblockDetector.initialize === 'function') {
+          AdblockDetector.initialize();
+        } else {
+          console.warn('AdblockDetector still not available after delay, skipping initialization');
+        }
+      }, 1000);
+    }
+  } catch (e) {
+    console.warn('Error initializing AdblockDetector, continuing without it:', e);
+  }
 
     
     // Initialize other components
