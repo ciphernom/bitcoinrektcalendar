@@ -12,6 +12,8 @@ import { state, monthNames } from '../app.js';
 import { formatDate, formatPercentage } from '../utils/formatting.js';
 import { calculateStandardDeviation } from '../utils/statistics.js';
 import { NaiveBayesClassifier } from '../core/naive-bayes-classifier.js';
+import { ConversationContext } from './conversationContext.js';
+import { EnhancedNLU } from './enhancedNLU.js';
 
 /**
  * Bot configuration and state management
@@ -58,6 +60,10 @@ const botState = {
   intentPatterns: null,
   avatar: null
 };
+
+// Initialize the enhanced components after botState declaration
+const conversationContext = new ConversationContext();
+const enhancedNLU = new EnhancedNLU();
 
 /**
  * Initialize the RektBot component
@@ -767,8 +773,11 @@ function addBotMessage(message, isHTML = false, isTyping = true) {
  * @param {string} message - User message text
  */
 function processUserMessage(message) {
-  // Update context based on user message
-  updateMessageContext(message);
+  // Use the enhanced NLU to understand the query
+  const processedMessage = enhancedNLU.processMessage(message, conversationContext);
+  
+  // Add the message to conversation context
+  conversationContext.addMessage('user', message, processedMessage.entities);
   
   // Get sentiment using NBC
   const sentiment = botState.nbc ? botState.nbc.getSentimentScore(message) : 0;
@@ -776,44 +785,64 @@ function processUserMessage(message) {
   // Update avatar mood based on sentiment
   updateAvatarMood(sentiment > 0.3 ? 'bullish' : sentiment < -0.3 ? 'bearish' : 'neutral');
   
-  // Classify the intent using patterns
+  // Use the processed intent with higher confidence
   let handler = handleGenericResponse;
+  const intent = processedMessage.intent;
+  botState.context.lastQuestionType = intent;
   
-  for (const intent of botState.intentPatterns) {
-    if (intent.pattern.test(message)) {
-      handler = intent.handler;
-      botState.context.lastQuestionType = intent.name;
+  // Map intent to handler
+  switch(intent) {
+    case 'risk_assessment':
+      handler = handleRiskAssessment;
       break;
-    }
+    case 'strategy_advice':
+      handler = handleStrategyAdvice;
+      break;
+    case 'metric_analysis':
+      handler = handleMetricAnalysis;
+      break;
+    case 'market_prediction':
+      handler = handleMarketPrediction;
+      break;
+    case 'scenario_simulation':
+      handler = handleScenarioSimulation;
+      break;
+    case 'historical_comparison':
+      handler = handleHistoricalComparison;
+      break;
+    case 'educational':
+      handler = handleEducationalQuery;
+      break;
+    default:
+      handler = handleGenericResponse;
   }
   
   // Generate response using the identified handler
-  const response = handler(message, sentiment);
+  // Pass both the original message and the processed info with entities
+  const response = handler(message, sentiment, processedMessage);
   
-  // Add bot message with HTML if visual response is included
+  // Add the bot response to context
+  conversationContext.addMessage('bot', response.text);
+  
+  // Display the response
   if (response.visual) {
-    // Create container for text and visual
     const fullResponse = document.createElement('div');
     fullResponse.className = 'rektbot-full-response';
     
-    // Add text
     const textElement = document.createElement('div');
     textElement.className = 'rektbot-text-response';
     textElement.textContent = response.text;
     fullResponse.appendChild(textElement);
     
-    // Add visual
     fullResponse.appendChild(response.visual);
     
-    // Send as HTML
     addBotMessage(fullResponse.outerHTML, true);
   } else {
-    // Just text response
     addBotMessage(response.text);
   }
   
   // Update suggestions based on conversation
-  updateSuggestions(botState.context.lastQuestionType);
+  updateSuggestions(intent);
 }
 
 /**
@@ -1836,6 +1865,212 @@ function handleHistoricalComparison(message) {
 }
 
 /**
+ * Handle educational query intent
+ * @param {string} message - User message
+ * @param {number} sentiment - Message sentiment
+ * @param {Object} processedMessage - NLU-processed message with entities
+ * @returns {Object} Response with text and visual
+ */
+function handleEducationalQuery(message, sentiment, processedMessage) {
+  // Extract the topic from entities or message
+  const entities = processedMessage.entities;
+  let topic = '';
+  
+  if (entities.metric) {
+    topic = entities.metric.mentioned;
+  } else if (/\b(model|calculation|algorithm)\b/i.test(message)) {
+    topic = 'risk model';
+  } else if (/\b(seasonality|seasonal)\b/i.test(message)) {
+    topic = 'seasonality';
+  } else if (/\b(cycle|halving)\b/i.test(message)) {
+    topic = 'market cycle';
+  } else {
+    topic = 'risk calculation';
+  }
+  
+  // Adjust explanation detail based on user knowledge level
+  const userLevel = conversationContext.userProfile.knowledgeLevel;
+  
+  // Create educational content
+  let explanation = '';
+  let visual = null;
+  
+  switch(topic.toLowerCase()) {
+    case 'risk model':
+      explanation = generateModelExplanation(userLevel);
+      visual = createModelVisual();
+      break;
+    case 'mvrv':
+      explanation = generateMVRVExplanation(userLevel);
+      visual = createMetricVisual('MVRV');
+      break;
+    case 'nvt':
+      explanation = generateNVTExplanation(userLevel);
+      visual = createMetricVisual('NVT');
+      break;
+    // Add more topics as needed
+    default:
+      explanation = generateGeneralExplanation(userLevel);
+  }
+  
+  return {
+    text: explanation,
+    visual: visual
+  };
+}
+
+/**
+ * Helper functions for educational content
+ */
+function generateModelExplanation(level) {
+  if (level === 'advanced') {
+    return "The Calendar of Rekt uses a Poisson-Gamma Bayesian model with seasonality adjustments. It calculates the posterior probability distribution for extreme market events (defined as daily returns below the 1st percentile) using conjugate priors. The model incorporates on-chain metrics, volatility adjustments, and market cycle position to refine crash probabilities.";
+  } else if (level === 'intermediate') {
+    return "The risk model analyzes historical Bitcoin crashes (extreme 1% daily moves) and calculates the probability of similar events occurring in each month. It incorporates seasonal patterns, volatility, and on-chain metrics to adjust the risk level. The model uses Bayesian statistics to update probabilities based on observed data.";
+  } else {
+    return "The risk model looks at Bitcoin's price history to find patterns in when crashes happen. It notices that some months have more crashes than others, and uses this pattern along with current market conditions to predict the chance of a crash happening soon.";
+  }
+}
+
+function generateMVRVExplanation(level) {
+  if (level === 'advanced') {
+    return "MVRV (Market Value to Realized Value) is a ratio that compares bitcoin's market capitalization (current price × circulating supply) against its realized capitalization (price of each coin when it last moved × circulating supply). It's a powerful metric for identifying market tops and bottoms. Values above 3.5 historically indicate market overvaluation and increased crash risk, while values below 1.0 often indicate undervaluation and accumulation opportunities.";
+  } else {
+    return "MVRV ratio compares Bitcoin's current market price to the average price paid by investors. When it's high (above 3), it suggests the market might be overvalued and at higher risk of a correction. When it's low (below 1), it often indicates good buying opportunities. This metric helps identify whether Bitcoin is currently expensive or cheap relative to what investors paid.";
+  }
+}
+
+function generateNVTExplanation(level) {
+  if (level === 'advanced') {
+    return "NVT (Network Value to Transactions) ratio is analogous to the P/E ratio in traditional markets. It compares Bitcoin's market capitalization to its daily transaction volume in USD, measuring how the network is valued relative to its utility. High NVT values indicate the network may be overvalued compared to the economic activity it supports, while low values suggest potential undervaluation. The ratio is particularly useful for identifying bubble conditions when price significantly outpaces fundamental usage.";
+  } else {
+    return "NVT ratio compares Bitcoin's price to how much value is being transferred on the network. Think of it like a P/E ratio for Bitcoin. When NVT is high, it means the price might be too high compared to actual Bitcoin usage, signaling increased risk. When it's low, it suggests Bitcoin might be undervalued based on how much it's being used for transactions.";
+  }
+}
+
+function createModelVisual() {
+  // Create a visual explanation of the model
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  visual.innerHTML = `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Risk Model Components</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <div style="flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          <div style="font-weight: bold; margin-bottom: 5px;">Historical Data</div>
+          <div style="font-size: 0.9rem; opacity: 0.8;">Analyzes extreme price moves (1st percentile daily returns) across Bitcoin's history</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          <div style="font-weight: bold; margin-bottom: 5px;">Seasonal Patterns</div>
+          <div style="font-size: 0.9rem; opacity: 0.8;">Adjusts for monthly variations in crash frequency seen throughout Bitcoin's history</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          <div style="font-weight: bold; margin-bottom: 5px;">On-Chain Metrics</div>
+          <div style="font-size: 0.9rem; opacity: 0.8;">Incorporates MVRV, NVT, and other blockchain data to refine crash probabilities</div>
+        </div>
+        <div style="flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+          <div style="font-weight: bold; margin-bottom: 5px;">Market Sentiment</div>
+          <div style="font-size: 0.9rem; opacity: 0.8;">Adjusts risk based on current market sentiment from news and social media</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  return visual;
+}
+
+function createMetricVisual(metricType) {
+  // Create a visual explanation of a specific metric
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  // Different visuals based on metric type
+  if (metricType === 'MVRV') {
+    visual.innerHTML = `
+      <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+        <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">MVRV Ratio Interpretation</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #ff3b30;">3.5+</div>
+            <div style="flex: 1; background: rgba(255, 59, 48, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #ff3b30;">
+              Extreme market euphoria - historically coincides with market tops and high crash probability
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #ff9500;">2-3.5</div>
+            <div style="flex: 1; background: rgba(255, 149, 0, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #ff9500;">
+              Elevated market valuation - increased risk but not yet at extreme levels
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #ffcc00;">1-2</div>
+            <div style="flex: 1; background: rgba(255, 204, 0, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #ffcc00;">
+              Fair value range - typical market conditions with moderate risk
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #34c759;">< 1</div>
+            <div style="flex: 1; background: rgba(52, 199, 89, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #34c759;">
+              Undervalued territory - historically excellent accumulation zone with reduced crash risk
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (metricType === 'NVT') {
+    visual.innerHTML = `
+      <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+        <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">NVT Ratio Interpretation</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #ff3b30;">65+</div>
+            <div style="flex: 1; background: rgba(255, 59, 48, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #ff3b30;">
+              Highly overvalued - network value far exceeds transaction activity, indicating high risk
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #ff9500;">45-65</div>
+            <div style="flex: 1; background: rgba(255, 149, 0, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #ff9500;">
+              Moderately elevated - price appreciation outpacing utility growth, suggesting caution
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #ffcc00;">30-45</div>
+            <div style="flex: 1; background: rgba(255, 204, 0, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #ffcc00;">
+              Fair value range - balanced relationship between price and network activity
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 60px; text-align: center; font-weight: bold; color: #34c759;">< 30</div>
+            <div style="flex: 1; background: rgba(52, 199, 89, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid #34c759;">
+              Undervalued - high transaction activity relative to market cap, suggesting strong fundamentals
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    // Generic visual for other metrics
+    visual.innerHTML = `
+      <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+        <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">${metricType} Analysis</div>
+        <div style="font-size: 0.95rem; opacity: 0.9;">
+          This metric helps assess Bitcoin market conditions by examining blockchain data.
+          The model incorporates this with other factors to generate crash risk probabilities.
+        </div>
+      </div>
+    `;
+  }
+  
+  return visual;
+}
+
+function generateGeneralExplanation(level) {
+  return "The Calendar of Rekt uses a sophisticated risk model that analyzes historical Bitcoin price patterns, on-chain metrics, and market sentiment to calculate the probability of extreme price crashes in each month. It identifies seasonal patterns and adjusts for current market conditions to provide forward-looking risk assessments.";
+}
+
+/**
  * Handle generic/fallback responses
  * @param {string} message - User message
  * @returns {Object} Response with text and visual
@@ -1940,6 +2175,14 @@ function updateSuggestions(lastMessageType) {
         "Explain the risk model"
       ];
       break;
+    case 'educational':
+      suggestions = [
+        "Explain MVRV in detail",
+        "How does the risk model work?",
+        "Explain NVT ratio",
+        "Tell me about market cycles"
+      ];
+      break;
     default:
       suggestions = REKTBOT_CONFIG.suggestionPrompts;
   }
@@ -2035,3 +2278,4 @@ export {
   closeBot,
   updateAvatarMood
 };
+            
