@@ -8,7 +8,7 @@
  * @copyright 2025 Ciphernom
  */
 
-import { state } from '../app.js';
+import { state, monthNames } from '../app.js';
 import { formatDate, formatPercentage } from '../utils/formatting.js';
 import { calculateStandardDeviation } from '../utils/statistics.js';
 import { NaiveBayesClassifier } from '../core/naive-bayes-classifier.js';
