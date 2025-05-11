@@ -27,11 +27,6 @@ export class EnhancedNLU {
     // Feature words for intent classification
     this.featureWords = this.setupFeatureWords();
     
-    // Month name mapping for entity extraction
-    this.monthMap = monthNames.reduce((map, month, index) => {
-      map[month.toLowerCase()] = index;
-      return map;
-    }, {});
   }
   
   /**
