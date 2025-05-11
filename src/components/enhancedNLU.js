@@ -1,8 +1,17 @@
-// src/components/enhancedNLU.js
-import { monthNames } from '../app.js';
-
 export class EnhancedNLU {
   constructor() {
+    // Define month names locally instead of importing them
+    this.monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    
+    // Use the local definition
+    this.monthMap = this.monthNames.reduce((map, month, index) => {
+      map[month.toLowerCase()] = index;
+      return map;
+    }, {});
+    
     // Initialize with more sophisticated intent patterns
     this.intentPatterns = this.setupIntentPatterns();
     
