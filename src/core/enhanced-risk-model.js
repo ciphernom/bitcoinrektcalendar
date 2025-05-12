@@ -34,7 +34,7 @@ function calculateCredibleInterval(alpha, beta, tau) {
     // For 95% credible interval
     const lowerQuantile = 0.025;
     const upperQuantile = 0.975;
-    
+
     // Get the quantiles of the gamma distribution (posterior)
     const lowerLambda = jStat.gamma.inv(lowerQuantile, alpha, 1/beta);
     const upperLambda = jStat.gamma.inv(upperQuantile, alpha, 1/beta);
@@ -43,6 +43,14 @@ function calculateCredibleInterval(alpha, beta, tau) {
     const lowerRisk = calculateProbability(lowerLambda);
     const upperRisk = calculateProbability(upperLambda);
     
+    // Mean of the Gamma posterior is alpha/beta
+    const meanLambda = alpha / beta;
+    
+    // Ensure upper bound is at least as high as the mean-based risk
+    const meanBasedRisk = calculateProbability(meanLambda);
+    if (upperRisk < meanBasedRisk) {
+      upperRisk = Math.min(0.95, meanBasedRisk * 1.2);
+    }
     console.log(`Credible interval calculation - Alpha: ${alpha}, Beta: ${beta}, Tau: ${tau}`);
     console.log(`Lambda quantiles: Lower ${lowerLambda.toFixed(6)}, Upper ${upperLambda.toFixed(6)}`);
     console.log(`Risk interval: (${(lowerRisk*100).toFixed(1)}%, ${(upperRisk*100).toFixed(1)}%)`);
@@ -935,11 +943,28 @@ export function applyOnChainRiskToGauge() {
     
     // Update the risk value in state - handle both object and scalar formats
     if (typeof currentMonthRiskData === 'object' && currentMonthRiskData !== null) {
-      // For object format, update the risk property but preserve CI
+      // Calculate adjustment factor to preserve interval proportions
+      const adjustmentFactor = enhancedRisk / riskValue;
+      
+      // Ensure lower bound doesn't exceed risk value
+      let adjustedLower = Math.min(
+        enhancedRisk * 0.9,  // Lower bound shouldn't exceed 90% of risk
+        Math.max(0.05, lowerBound * adjustmentFactor)
+      );
+      
+      // Ensure upper bound is at least as high as risk value
+      let adjustedUpper = Math.max(
+        enhancedRisk * 1.1,  // Upper bound should be at least 110% of risk
+        Math.min(0.95, upperBound * adjustmentFactor)
+      );
+      
+      console.log(`Credible interval adjustment: Original [${(lowerBound*100).toFixed(1)}%, ${(upperBound*100).toFixed(1)}%]`);
+      console.log(`Adjusted to: [${(adjustedLower*100).toFixed(1)}%, ${(adjustedUpper*100).toFixed(1)}%] for risk ${(enhancedRisk*100).toFixed(1)}%`);
+      
       state.riskByMonth[timeframe][currentMonthIndex + 1] = {
         risk: enhancedRisk,
-        lower: lowerBound,
-        upper: upperBound
+        lower: adjustedLower,
+        upper: adjustedUpper
       };
     } else {
       // For scalar format, just update the value

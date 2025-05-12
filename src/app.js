@@ -1,7 +1,13 @@
 /**
  * Calendar of Rekt - Main Application
  */
-
+// Ensure Chart.js is properly available globally
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof Chart === 'undefined' && typeof window.Chart !== 'undefined') {
+    window.Chart = window.Chart;
+    console.log('Made Chart.js available globally from window.Chart');
+  }
+});
 // Import core modules
 import * as DataService from './core/data-service.js';
 import * as RiskModel from './core/risk-model.js';

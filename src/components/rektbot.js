@@ -16,6 +16,53 @@ import { ConversationContext } from './conversationContext.js';
 import { EnhancedNLU } from './enhancedNLU.js';
 
 /**
+ * Utility function to ensure Chart.js is available and create charts safely
+ * @param {HTMLElement} container - The container to append the chart to
+ * @param {string} chartType - Type of chart to create
+ * @param {Object} chartConfig - Chart configuration object
+ * @returns {Object|null} Chart instance or null if creation failed
+ */
+function createSafeChart(container, chartType, chartConfig) {
+  // Clear the container first
+  container.innerHTML = '';
+  
+  // Create new canvas
+  const canvas = document.createElement('canvas');
+  canvas.id = `rektbot-chart-${Date.now()}`;
+  canvas.style.width = '100%';
+  canvas.style.height = '250px';
+  
+  // Add canvas to container
+  container.appendChild(canvas);
+  
+  // Create chart with error handling
+  try {
+    // Check if Chart is accessible
+    if (typeof Chart === 'undefined') {
+      if (typeof window.Chart !== 'undefined') {
+        // Use Chart from window object if available
+        window.Chart = window.Chart;
+      } else {
+        throw new Error("Chart.js library not available");
+      }
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error("Cannot get canvas context");
+    }
+    
+    // Create and return chart with the provided config
+    return new Chart(ctx, chartConfig);
+  } catch (e) {
+    console.error(`Error creating ${chartType} chart:`, e);
+    container.innerHTML = `<div style="color: red; text-align: center; margin-top: 20px;">Error creating chart: ${e.message}</div>`;
+    return null;
+  }
+}
+
+
+/**
  * Bot configuration and state management
  */
 const REKTBOT_CONFIG = {
@@ -99,6 +146,39 @@ export function initialize() {
     const botTab = document.getElementById('rektBot-tab');
     if (botTab) botTab.classList.add('visible');
   }, 1500);
+  
+  // Ensure all charts render properly
+setTimeout(() => {
+  // Fix any existing charts in the conversation
+  const chartContainers = document.querySelectorAll('.rektbot-visual');
+  if (chartContainers.length > 0) {
+    console.log(`Found ${chartContainers.length} chart containers to initialize`);
+    
+    chartContainers.forEach((container, index) => {
+      const chartType = container.classList.contains('scenario-simulation') ? 'scenario' : 
+                       container.classList.contains('market-analysis-chart') ? 'prediction' : 
+                       'generic';
+      
+      // Only reinitialize containers that don't have working charts
+      const hasCanvas = container.querySelector('canvas');
+      const hasErrorMsg = container.querySelector('div[style*="color: red"]');
+      
+      if (!hasCanvas || hasErrorMsg) {
+        console.log(`Reinitializing chart container ${index} (${chartType})`);
+        
+        // Create a placeholder chart (will be replaced when user interacts again)
+        const placeholderDiv = document.createElement('div');
+        placeholderDiv.style.cssText = 'text-align: center; padding: 20px; color: #aaa; font-style: italic;';
+        placeholderDiv.textContent = 'Chart will appear when you interact with this message again';
+        
+        // Clear and add placeholder
+        container.innerHTML = '';
+        container.appendChild(placeholderDiv);
+      }
+    });
+  }
+}, 1000);
+  
   
   // Return a resolved promise to maintain compatibility with app initialization chain
   return Promise.resolve(botState);
@@ -906,9 +986,10 @@ function handleRiskAssessment(message) {
   const visual = document.createElement('div');
   visual.className = 'rektbot-visual';
   
-  // Create mini risk gauge
-  const gauge = document.createElement('div');
-  gauge.className = 'mini-risk-gauge';
+  // Create mini risk gauge container
+  const gaugeContainer = document.createElement('div');
+  gaugeContainer.className = 'mini-risk-gauge';
+  visual.appendChild(gaugeContainer);
   
   // Get current risk from application state
   const currentMonth = new Date().getMonth() + 1;
@@ -925,7 +1006,7 @@ function handleRiskAssessment(message) {
   }
   
   // Create gauge HTML
-  gauge.innerHTML = `
+  gaugeContainer.innerHTML = `
     <div class="gauge-container">
       <div class="gauge">
         <div class="gauge-fill" style="width: ${riskPercentage}%;"></div>
@@ -937,8 +1018,6 @@ function handleRiskAssessment(message) {
     ${credibleInterval ? `<div style="text-align: center; font-size: 0.8rem; opacity: 0.7; margin-top: 5px;">95% Credible Interval: ${credibleInterval.lower}% - ${credibleInterval.upper}%</div>` : ''}
   `;
   
-  visual.appendChild(gauge);
-  
   // Add timeframe buttons
   const controls = document.createElement('div');
   controls.className = 'timeframe-controls';
@@ -949,16 +1028,18 @@ function handleRiskAssessment(message) {
   `;
   
   // Add click handlers to buttons
-  controls.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const days = parseInt(btn.dataset.days);
-      updateRiskGauge(gauge, days);
-      
-      // Update active state
-      controls.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  setTimeout(() => {
+    controls.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const days = parseInt(btn.dataset.days);
+        updateRiskGauge(gaugeContainer, days);
+        
+        // Update active state
+        controls.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
     });
-  });
+  }, 100);
   
   visual.appendChild(controls);
   
@@ -1459,55 +1540,54 @@ function handleScenarioSimulation(message) {
     scenarioData[i] = currentPrice * (1 + (signedPercent / 100) * changeRatio);
   }
   
-  // Add chart to container
-  const chart = document.createElement('canvas');
-  chartContainer.appendChild(chart);
-  
-  // Create the chart
-  setTimeout(() => {
-    new Chart(chart, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Current Trajectory',
-            data: baselineData,
-            borderColor: '#4bb543',
-            borderDash: [5, 5],
-            fill: false
-          },
-          {
-            label: `${direction === 'drops' ? 'Crash' : 'Rally'} Scenario (${percent}%)`,
-            data: scenarioData,
-            borderColor: direction === 'drops' ? '#ff3b30' : '#4bb543',
-            backgroundColor: direction === 'drops' ? 'rgba(255, 59, 48, 0.1)' : 'rgba(75, 181, 67, 0.1)',
-            fill: true
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false
+  // Set up chart configuration
+  const chartConfig = {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Current Trajectory',
+          data: baselineData,
+          borderColor: '#4bb543',
+          borderDash: [5, 5],
+          fill: false
         },
-        scales: {
-          y: {
-            title: {
-              display: true,
-              text: 'Price (USD)'
-            },
-            ticks: {
-              callback: function(value) {
-                return '$' + value.toLocaleString();
-              }
+        {
+          label: `${direction === 'drops' ? 'Crash' : 'Rally'} Scenario (${percent}%)`,
+          data: scenarioData,
+          borderColor: direction === 'drops' ? '#ff3b30' : '#4bb543',
+          backgroundColor: direction === 'drops' ? 'rgba(255, 59, 48, 0.1)' : 'rgba(75, 181, 67, 0.1)',
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        y: {
+          title: {
+            display: true,
+            text: 'Price (USD)'
+          },
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toLocaleString();
             }
           }
         }
       }
-    });
+    }
+  };
+  
+  // Create chart using our safe chart function with a delay
+  setTimeout(() => {
+    createSafeChart(chartContainer, 'scenario', chartConfig);
   }, 100);
   
   // Calculate risk change based on scenario
@@ -1627,7 +1707,7 @@ function handleMarketPrediction(message) {
   const visual = document.createElement('div');
   visual.className = 'rektbot-visual';
   
-  // Create prediction chart
+  // Create chart container
   const chartContainer = document.createElement('div');
   chartContainer.className = 'market-analysis-chart';
   visual.appendChild(chartContainer);
@@ -1684,42 +1764,41 @@ function handleMarketPrediction(message) {
     });
   }
   
-  // Add chart to container
-  const chart = document.createElement('canvas');
-  chartContainer.appendChild(chart);
-  
-  // Create the chart
-  setTimeout(() => {
-    new Chart(chart, {
-      type: 'line',
-      data: chartData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 100,
-            title: {
-              display: true,
-              text: 'Crash Probability (%)'
-            }
+  // Define chart config
+  const chartConfig = {
+    type: 'line',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: {
+            display: true,
+            text: 'Crash Probability (%)'
           }
-        },
-        plugins: {
-          tooltip: {
-            callbacks: {
-              title: function(tooltipItems) {
-                return tooltipItems[0].label;
-              },
-              label: function(context) {
-                return `${context.dataset.label}: ${context.formattedValue}%`;
-              }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: function(tooltipItems) {
+              return tooltipItems[0].label;
+            },
+            label: function(context) {
+              return `${context.dataset.label}: ${context.formattedValue}%`;
             }
           }
         }
       }
-    });
+    }
+  };
+  
+  // Create chart using our safe chart function with a delay
+  setTimeout(() => {
+    createSafeChart(chartContainer, 'market-prediction', chartConfig);
   }, 100);
   
   // Add timeframe controls

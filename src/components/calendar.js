@@ -108,7 +108,31 @@ function renderCalendar(riskByMonth, historicalCrashes) {
       </div>
       ${breakdownContent}
     `;
-    
+      // Force immediate animation completion after a very short delay
+        setTimeout(() => {
+          // Force immediate animation completion
+          const progressFill = monthCard.querySelector('.progress-fill');
+          if (progressFill) {
+            progressFill.style.width = `${riskPercentage}%`;
+          }
+          
+          // Set explicit final state for layout
+          monthCard.style.opacity = "1";
+          monthCard.style.transform = "none";
+          monthCard.style.position = "relative";
+          
+          // Clear any transition delays that might be causing issues
+          monthCard.style.transitionDelay = "0s";
+          
+          // Force grid layout refresh
+          monthCard.style.display = "flex";
+          monthCard.style.flexDirection = "column";
+          
+          // Force a reflow
+          void monthCard.offsetHeight;
+        }, 200); //  timeout to ensure animations have time to process
+      
+      
     // Add click event to open popup for the month card
     monthCard.addEventListener('click', function() {
       openMonthPopup(month, historicalCrashes[month] || []);
