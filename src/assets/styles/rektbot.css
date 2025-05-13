@@ -835,3 +835,78 @@ body.rektBot-resizing * {
   padding: 5px 12px;
   cursor: pointer;
 }
+
+/* Knowledge Graph Explorer Styles */
+.kg-explorer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.kg-categories {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kg-category {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.kg-category:hover {
+  background: rgba(247, 147, 26, 0.2);
+  border-color: rgba(247, 147, 26, 0.5);
+}
+
+.kg-category.active {
+  background: rgba(247, 147, 26, 0.3);
+  border-color: var(--btc-orange);
+}
+
+.kg-entities {
+  min-height: 150px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(20, 20, 20, 0.5);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.kg-entity {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kg-entity:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.entity-relations {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.relation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.relation-item {
+  background: rgba(50, 50, 50, 0.5);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+}
