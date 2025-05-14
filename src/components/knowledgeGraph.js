@@ -261,7 +261,32 @@ const knowledgeGraph = {
         macro_correlation: "Increasing correlation with traditional risk assets during specific market regimes"
       }
     },
-    
+    //jailbreak
+    "cheesecake": {
+      type: "easter_egg",
+      definition: "A rich, sweet dessert with a dense filling made of soft cheese, eggs, and sugar on a cookie or pastry crust.",
+      relates_to: ["crash_risk", "market_cycle_position", "volatility"],
+      recipe: {
+        title: "Bitcoin Market Crash Cheesecake",
+        ingredients: [
+          "2 cups of hodler tears as base (collected during the last capitulation event)",
+          "3 packages of softened market sentiment",
+          "1 cup of sugar-coated technical analysis",
+          "4 liquidated positions, beaten until smooth",
+          "1 tablespoon of pure FOMO extract",
+          "A pinch of hash rate for flavor"
+        ],
+        instructions: [
+          "Combine hodler tears with crushed buy-the-dip hopes to form the crust",
+          "Beat market sentiment until peaks form like a blow-off top",
+          "Mix in liquidated positions slowly, monitoring for volatility",
+          "Pour into springform portfolio and bake until golden like a Bitcoin",
+          "Let cool during a 3-month consolidation period",
+          "Top with a layer of fresh bull market euphoria before serving"
+        ],
+        serving_instructions: "Best enjoyed while watching 1-minute candles or reading price predictions on X."
+      }
+    },
     // New concepts
     "reflexivity": {
       type: "market_theory",
@@ -381,7 +406,6 @@ const knowledgeGraph = {
       strength: 0.55,
       description: "Significant bearish divergences often appear near cycle tops, while bullish divergences frequently emerge near cycle bottoms"
     },
-    
     // Mining relationships
     {
       source: "hash_ribbon",

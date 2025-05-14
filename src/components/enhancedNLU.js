@@ -115,545 +115,960 @@ export class EnhancedNLU {
   /**
    * Set up more sophisticated intent patterns with examples and key phrases
    */
-  setupIntentPatterns() {
-    return [
-      {
-        name: 'risk_assessment',
-        keyPhrases: ['risk', 'chance', 'probability', 'odds', 'likelihood', 'crash', 'correction', 'danger', 'downside', 'vulnerability'],
-        examples: [
-          'what is the current risk', 
-          'how risky is bitcoin right now',
-          'what are the odds of a crash',
-          'chance of correction',
-          'crash probability this month',
-          'how likely is a drop',
-          'vulnerability assessment',
-          'what\'s the downside risk',
-          'danger level for bitcoin',
-          'assess current market risk'
-        ],
-        excludePhrases: ['strategy', 'historical', 'compare']
-      },
-      {
-        name: 'strategy_advice',
-        keyPhrases: ['strategy', 'advice', 'should i', 'recommend', 'suggestion', 'position', 'exposure', 'allocation', 'portfolio', 'approach', 'best action'],
-        examples: [
-          'what should i do now',
-          'give me strategy advice',
-          'is now a good time to buy',
-          'should i reduce exposure',
-          'what position should i take',
-          'recommended action',
-          'how much should i allocate',
-          'adjust my portfolio',
-          'best approach in this market',
-          'tactical positioning'
-        ]
-      },
-      {
-        name: 'metric_analysis',
-        keyPhrases: ['metric', 'mvrv', 'nvt', 'on-chain', 'indicator', 'explain', 'address', 'transaction', 'puell', 'sopr', 'hash ribbon', 'stablecoin', 'ratio'],
-        examples: [
-          'explain mvrv ratio',
-          'what are on-chain metrics saying',
-          'tell me about nvt',
-          'how do metrics look',
-          'active addresses trend',
-          'transaction volume analysis',
-          'current puell multiple',
-          'sopr indicator analysis',
-          'stablecoin ratio implications',
-          'hash ribbon status'
-        ]
-      },
-      {
-        name: 'market_prediction',
-        keyPhrases: ['predict', 'forecast', 'next', 'future', 'outlook', 'projection', 'coming', 'anticipate', 'expected', 'likely to', 'probability of', 'potential for'],
-        examples: [
-          'what will happen next month',
-          'predict bitcoin risk',
-          'outlook for next 90 days',
-          'future crash probability',
-          'forecast next quarter',
-          'what are the projections',
-          'anticipate market direction',
-          'expected behavior',
-          'likely market movements',
-          'probability of new highs',
-          'potential for extended decline'
-        ]
-      },
-      {
-        name: 'scenario_simulation',
-        keyPhrases: ['what if', 'scenario', 'simulation', 'rise', 'drop', 'fall', 'increase', 'decrease', 'crash', 'breakout', 'rally', 'consolidate', 'stagnate'],
-        examples: [
-          'what if bitcoin drops 20%',
-          'scenario where price rises 50%',
-          'simulate market crash',
-          'what happens if btc falls',
-          'impact of 30% increase',
-          'if bitcoin goes down 10% what is the risk',
-          'what if we break $100k',
-          'scenario with 3 months of sideways action',
-          'simulate rapid 40% rally',
-          'liquidation cascade scenario'
-        ]
-      },
-      {
-        name: 'historical_comparison',
-        keyPhrases: ['historical', 'compare', 'previous', 'past', 'pattern', 'similar', 'history', 'before', 'precedent', 'analogous', 'comparable', 'resembles'],
-        examples: [
-          'show historical crash comparison',
-          'what happened in previous cycles',
-          'compare to past crashes',
-          'historical patterns for January',
-          'similar situations in the past',
-          'how does this compare to history',
-          'precedent for current conditions',
-          'analogous market structure',
-          'comparable cycle position',
-          'market that resembles today'
-        ]
-      },
-      {
-        name: 'educational',
-        keyPhrases: ['explain', 'how does', 'what is', 'meaning', 'definition', 'understand', 'learn', 'concept', 'mechanism', 'function', 'principle'],
-        examples: [
-          'explain how the model works',
-          'what is seasonality',
-          'how does the risk calculation work',
-          'explain bayesian model',
-          'what\'s the meaning of extreme events',
-          'help me understand cycle position',
-          'mechanism of liquidation cascades',
-          'concept of market reflexivity',
-          'function of bitcoin halving',
-          'principles of on-chain analysis',
-          'how does puell multiple work'
-        ]
-      },
-      {
-        name: 'knowledge_explorer',
-        keyPhrases: ['knowledge', 'graph', 'explorer', 'explore', 'concepts', 'relationships', 'terms', 'connections', 'map', 'network', 'linked', 'related'],
-        examples: [
-          'explore knowledge graph',
-          'show me the knowledge explorer',
-          'what concepts do you know',
-          'explore market relationships',
-          'show all concepts',
-          'knowledge map',
-          'connections between metrics',
-          'related concepts to mvrv',
-          'what factors influence crash risk',
-          'map of on-chain indicators',
-          'network of market concepts'
-        ]
-      },
-      {
-        name: 'market_structure',
-        keyPhrases: ['market structure', 'support', 'resistance', 'trend', 'pattern', 'formation', 'technical', 'level', 'breakout', 'breakdown', 'divergence'],
-        examples: [
-          'analyze current market structure',
-          'key support levels',
-          'critical resistance points',
-          'technical divergences',
-          'pattern formation analysis',
-          'trend strength assessment',
-          'key price levels',
-          'potential breakout zones',
-          'breakdown risk analysis',
-          'higher timeframe structure'
-        ]
-      },
-      {
-        name: 'sentiment_analysis',
-        keyPhrases: ['sentiment', 'fear', 'greed', 'market mood', 'investor psychology', 'social sentiment', 'crowd psychology', 'optimism', 'pessimism', 'euphoria', 'capitulation'],
-        examples: [
-          'current market sentiment',
-          'fear and greed analysis',
-          'social media sentiment indicators',
-          'signs of market euphoria',
-          'capitulation indicators',
-          'investor psychology assessment',
-          'market mood evaluation',
-          'crowd psychology signs',
-          'optimism vs pessimism measurement',
-          'sentiment divergence from price'
-        ]
-      },
-      {
-        name: 'black_swan_analysis',
-        keyPhrases: ['black swan', 'extreme event', 'tail risk', 'catastrophic', 'rare event', 'market shock', 'unexpected', 'outlier', 'crisis scenario', 'systemic risk'],
-        examples: [
-          'black swan risk assessment',
-          'protection against extreme events',
-          'tail risk in current market',
-          'catastrophic scenario preparation',
-          'market shock vulnerability',
-          'unexpected event impact',
-          'outlier scenario analysis',
-          'crisis preparation strategy',
-          'systemic risk evaluation',
-          'largest tail risks today'
-        ]
-      }
-    ];
-  }
+    setupIntentPatterns() {
+      return [
+        {
+          name: 'risk_assessment',
+          keyPhrases: ['risk', 'chance', 'probability', 'odds', 'likelihood', 'crash', 'correction', 'danger', 'downside', 'vulnerability', 'threat', 'exposure', 'hazard'],
+          examples: [
+            'what is the current risk', 
+            'how risky is bitcoin right now',
+            'what are the odds of a crash',
+            'chance of correction',
+            'crash probability this month',
+            'how likely is a drop',
+            'vulnerability assessment',
+            'what\'s the downside risk',
+            'danger level for bitcoin',
+            'assess current market risk'
+          ],
+          patterns: [
+            /\b(what|how).*?\b(risk|risky|chance|probability|odds|likelihood)\b/i,
+            /\b(crash|correction|dip|drop|dump|fall|decline).*?\b(risk|probability|chance|likelihood|odds)\b/i,
+            /\b(risk|probability|chance|odds).*?\b(crash|correction|dip|drop|dump|fall|decline)\b/i,
+            /\bhow likely\b.*?\b(crash|correction|dip|drop|dump|fall|decline)\b/i,
+            /\bvulnerability\b|\bvulnerable\b/i,
+            /\bdanger\b|\bdangerous\b/i,
+            /\bdownside\b|\bexposure\b/i,
+            /\brisk (level|assessment|analysis|evaluation|measure)\b/i,
+            /\bmarket risk\b/i,
+            /\bcurrent risk\b/i,
+            /\b(will|going to).*?\b(crash|dump|drop|dip|collapse|correct)\b/i
+          ],
+          excludePhrases: ['strategy', 'historical', 'compare']
+        },
+        {
+          name: 'strategy_advice',
+          keyPhrases: ['strategy', 'advice', 'should i', 'recommend', 'suggestion', 'position', 'exposure', 'allocation', 'portfolio', 'approach', 'best action', 'tactic', 'move', 'play'],
+          examples: [
+            'what should i do now',
+            'give me strategy advice',
+            'is now a good time to buy',
+            'should i reduce exposure',
+            'what position should i take',
+            'recommended action',
+            'how much should i allocate',
+            'adjust my portfolio',
+            'best approach in this market',
+            'tactical positioning'
+          ],
+          patterns: [
+            /\b(what|how).*?\b(should|recommend|advise|suggest).*?\b(do|buy|sell|trade|invest|act|position|allocate|hold)\b/i,
+            /\b(strategy|advice|recommendation|suggestion|tactic|approach|action|move|play)\b/i,
+            /\b(should|could|would|shall|might).*?\b(buy|sell|trade|invest|position|allocate|hold|exit|enter|add|reduce)\b/i,
+            /\b(good|bad|right|best|smart|wise|optimal).*?\b(time|opportunity|moment|decision).*?\b(to|for).*?\b(buy|sell|enter|exit|invest|trade)\b/i,
+            /\b(buy|sell|hold|trade) (now|signal|recommendation)\b/i,
+            /\b(how|what).*?\b(position|allocate|approach|handle|manage)\b/i,
+            /\bwhat (to|should) do\b/i,
+            /\badvice\b/i,
+            /\bis (now|it|this).*?\b(time|opportunity|chance)\b/i,
+            /\b(portfolio|position|allocation|exposure) (management|adjustment|strategy)\b/i,
+            /\bhow (to|do i|should i) (play|approach|handle) this\b/i
+          ]
+        },
+        {
+          name: 'metric_analysis',
+          keyPhrases: ['metric', 'mvrv', 'nvt', 'on-chain', 'indicator', 'explain', 'address', 'transaction', 'puell', 'sopr', 'hash ribbon', 'stablecoin', 'ratio', 'analysis', 'measure', 'data', 'analytics', 'fundamentals'],
+          examples: [
+            'explain mvrv ratio',
+            'what are on-chain metrics saying',
+            'tell me about nvt',
+            'how do metrics look',
+            'active addresses trend',
+            'transaction volume analysis',
+            'current puell multiple',
+            'sopr indicator analysis',
+            'stablecoin ratio implications',
+            'hash ribbon status'
+          ],
+          patterns: [
+            /\b(explain|tell about|describe|what is|how is|details on).*?\b(mvrv|nvt|puell|sopr|hash ribbon|stablecoin ratio|metric|indicator)\b/i,
+            /\b(on-chain|onchain|chain) (metric|analysis|data|indicator|activity|status|health)\b/i,
+            /\b(metric|indicator|measurement|analysis).*?\b(say|tell|show|indicate|suggest|look|status|analysis)\b/i,
+            /\b(active|unique) address(es)?\b/i,
+            /\btransaction (volume|value|activity|count)\b/i,
+            /\b(stablecoin|stable|tether|usdt|usdc) (ratio|supply|reserve|percentage)\b/i,
+            /\b(mvrv|market.*?realized|market to realized)\b/i,
+            /\b(nvt|network.*?transaction|network value|value.*?transaction)\b/i,
+            /\b(puell|multiple|mining profitability)\b/i,
+            /\b(sopr|spent output|profit ratio)\b/i,
+            /\b(hash|ribbon|miner|mining) (indicator|metric|status)\b/i,
+            /\b(fundamental|fundamentals|health|status|condition)\b/i,
+            /\b(what|how) do (the|) metrics (say|look|indicate|show)\b/i
+          ]
+        },
+        {
+          name: 'market_prediction',
+          keyPhrases: ['predict', 'forecast', 'next', 'future', 'outlook', 'projection', 'coming', 'anticipate', 'expected', 'likely to', 'probability of', 'potential for', 'upcoming', 'estimate', 'projection', 'expect', 'forecast'],
+          examples: [
+            'what will happen next month',
+            'predict bitcoin risk',
+            'outlook for next 90 days',
+            'future crash probability',
+            'forecast next quarter',
+            'what are the projections',
+            'anticipate market direction',
+            'expected behavior',
+            'likely market movements',
+            'probability of new highs',
+            'potential for extended decline'
+          ],
+          patterns: [
+            /\b(predict|forecast|project|anticipate|estimate).*?\b(price|market|movement|direction|trend|behavior|action)\b/i,
+            /\b(what will|what's going to|what is going to).*?\b(happen|occur|take place|unfold)\b/i,
+            /\b(next|coming|future|upcoming|following).*?\b(week|month|quarter|year|days|time|period)\b/i,
+            /\b(will|going to|about to).*?\b(happen|occur|take place|unfold|do|move|trend|change)\b/i,
+            /\b(outlook|projection|forecast|prediction|anticipation|expectation)\b/i,
+            /\b(likely|probable|expected|anticipated|projected).*?\b(outcome|result|consequence|direction|movement)\b/i,
+            /\bmarket (direction|trend|trajectory|path|future|destiny)\b/i,
+            /\b(probability|chance|likelihood|odds).*?\b(of|for).*?\b(new|higher|lower|increase|decrease|rise|drop)\b/i,
+            /\b(potential|possibility).*?\b(for|of).*?\b(growth|decline|continuation|reversal|rally|correction)\b/i,
+            /\b(expect|anticipate|foresee) (to|the|a|an) (see|have|get|witness|experience)\b/i,
+            /\bwhere (is|will).*?\b(price|market|bitcoin|btc) (go|head|end up|land)\b/i,
+            /\bhow (high|low) (will|can|could|might) (it|bitcoin|btc|the price) (go|reach|get|climb|fall)\b/i
+          ]
+        },
+        {
+          name: 'scenario_simulation',
+          keyPhrases: ['what if', 'scenario', 'simulation', 'rise', 'drop', 'fall', 'increase', 'decrease', 'crash', 'breakout', 'rally', 'consolidate', 'stagnate', 'hypothetical', 'model', 'simulate', 'test', 'suppose'],
+          examples: [
+            'what if bitcoin drops 20%',
+            'scenario where price rises 50%',
+            'simulate market crash',
+            'what happens if btc falls',
+            'impact of 30% increase',
+            'if bitcoin goes down 10% what is the risk',
+            'what if we break $100k',
+            'scenario with 3 months of sideways action',
+            'simulate rapid 40% rally',
+            'liquidation cascade scenario'
+          ],
+          patterns: [
+            /\bwhat if\b.*?\b(bitcoin|btc|price|market|it)\b.*?\b(goes|drops|falls|rises|increases|decreases|crashes|dumps|pumps|moons|tanks|collapses)\b/i,
+            /\b(if|should|when).*?\b(bitcoin|btc|price|market|it)\b.*?\b(goes|drops|falls|rises|increases|decreases|crashes|dumps|pumps|moons|tanks|collapses)\b/i,
+            /\b(scenario|simulation|model|case|situation|circumstance|possibility)\b.*?\b(where|with|of|that|when)\b/i,
+            /\b(simulate|model|test|run|calculate|compute)\b.*?\b(crash|rally|drop|rise|bull|bear|increase|decrease|scenario|movement)\b/i,
+            /\b(impact|effect|result|consequence|outcome)\b.*?\b(of|from|after)\b.*?\b([0-9]+%|percent|substantial|significant|major|minor)\b/i,
+            /\b(what|how).*?\b(happens|occurs|changes|adjusts|responds|reacts)\b.*?\b(if|when|after)\b/i,
+            /\bif.*?\b(breaks|exceeds|surpasses|crosses|moves above|jumps over|falls below|drops under|decreases below)\b/i,
+            /\b(sideways|consolidation|ranging|stagnant|flat)\b.*?\b(action|movement|trading|market|period|phase)\b/i,
+            /\b(rapid|quick|sudden|unexpected|sharp|dramatic)\b.*?\b(rally|crash|increase|decrease|rise|fall|movement|change)\b/i,
+            /\b(liquidation|margin call|forced selling|panic|capitulation|cascade)\b/i,
+            /\b(suppose|let's say|assuming|hypothetically|theoretically)\b/i,
+            /\b(drops|falls|rises|increases|decreases|moves).*?\bby [0-9]+%\b/i
+          ]
+        },
+        {
+          name: 'historical_comparison',
+          keyPhrases: ['historical', 'compare', 'previous', 'past', 'pattern', 'similar', 'history', 'before', 'precedent', 'analogous', 'comparable', 'resembles', 'earlier', 'prior', 'last time', 'correlation', 'previously',  'similarities', 'resemblance', '2017', '2018', '2019', '2020', '2021', 'cycle top', 'cycle bottom', 'last bull', 'previous bear', 'reminds of', 'wondering if', 'similarity between', 'parallels'],
+          examples: [
+            'show historical crash comparison',
+            'what happened in previous cycles',
+            'compare to past crashes',
+            'historical patterns for January',
+            'similar situations in the past',
+            'how does this compare to history',
+            'precedent for current conditions',
+            'analogous market structure',
+            'comparable cycle position',
+            'market that resembles today'
+          ],
+            patterns: [
+              /\b(historical|historic|history|past|previous|prior|earlier|before).*?\b(crash|rally|cycle|pattern|situation|condition|market|movement|event)\b/i,
+              /\b(compare|comparison|correlation|relation|similarity|resemblance)\b.*?\b(to|with|against|versus|vs)\b.*?\b(past|history|previous|prior|earlier|before)\b/i,
+              /\b(similar|like|same|comparable|analogous|equivalent|matching|resembling)\b.*?\b(to|as)\b.*?\b(past|previous|prior|earlier|history|historical|before)\b/i,
+              /\b(what|how|when).*?\b(happened|occurred|took place|unfolded|transpired)\b.*?\b(in|during|through|throughout)\b.*?\b(past|previous|last|prior)\b/i,
+              /\bprecedent\b/i,
+              /\bhistorical (analog|analogue|analogy|parallel|example|instance|case|reference)\b/i,
+              /\b(situation|condition|position|environment|scenario|setup|structure)\b.*?\b(like|similar to|resembling)\b.*?\b(today|now|present|current)\b/i,
+              /\b(how|what).*?\b(past|historical|previous)\b.*?\b(can|could|might|may|would|will)\b.*?\b(inform|guide|help|assist|tell|indicate|suggest)\b/i,
+              /\b(last|previous) time (this|that|it|we|bitcoin|btc|market) (happened|occurred|took place|was|reached|hit|saw|experienced)\b/i,
+              /\b(pattern|cycle|structure|formation|behavior) from (past|history|previous|prior|earlier|before)\b/i,
+              /\b(has this|have we) (happened|occurred|seen|experienced|witnessed) (before|previously|in the past)\b/i,
+              /\bcompare (current|today's|present|this) (market|situation|condition|position) (to|with|against) (past|history|previous|prior)\b/i,
+              // NEW PATTERNS BELOW
+              /\b(similarity|similarities|resemblance|parallel|comparison)\b.*?\b(between|among)\b/i,
+              /\b(compare|comparing)\b.*?\b(today|current|present|now)\b.*?\b(with|to|and)\b.*?\b(20\d\d|before|previous|past)\b/i,
+              /\b(20\d\d|previous cycle|last cycle|prior cycle)\b.*?\b(top|bottom|peak|crash|rally|bull|bear)\b/i,
+              /\b(wondering|curious|interested|question) (if|whether|about).*?\b(similar|like|comparison|resemblance)\b/i,
+              /\b(today\'?s?|current|present).*?\b(versus|vs|compared to|against).*?\b(20\d\d|previous|past|before|last cycle)\b/i,
+              /\b(before|during|after) the (20\d\d|previous|last|prior) (top|bottom|cycle|bull|bear|crash|market)/i,
+              /\b(any|some|possible|potential) (similarity|similarities|parallels|resemblance|comparison)\b/i,
+              /\b(market) (structure|condition|state|position).*?\b(like|similar|same as|resemble|match)\b/i,
+              /\b(reminds|reminiscent|evocative|suggestive) of\b/i,
+              /\blike what (happened|occurred|took place|unfolded)\b/i,
+              /\b(can|could) (you|we) (compare|draw parallels|see similarities)\b/i,
+              /\b(today|now|currently|presently|at this point|at this time).*?\b(vs|versus).*?\b(then|that time|those days|back then)\b/i
+            ]
+        },
+        {
+          name: 'educational',
+          keyPhrases: ['explain', 'how does', 'what is', 'meaning', 'definition', 'understand', 'learn', 'concept', 'mechanism', 'function', 'principle', 'theory', 'basics', 'overview', 'tutorial', 'guide', 'describe', 'teach'],
+          examples: [
+            'explain how the model works',
+            'what is seasonality',
+            'how does the risk calculation work',
+            'explain bayesian model',
+            'what\'s the meaning of extreme events',
+            'help me understand cycle position',
+            'mechanism of liquidation cascades',
+            'concept of market reflexivity',
+            'function of bitcoin halving',
+            'principles of on-chain analysis',
+            'how does puell multiple work'
+          ],
+          patterns: [
+            /\b(explain|describe|clarify|elaborate on|elucidate|tell me about)\b.*?\b(how|what|why|when|where|which)\b/i,
+            /\b(what|how) (is|are|does|do).*?\b(mean|work|function|operate|happen|occur)\b/i,
+            /\b(meaning|definition|explanation|description|concept|idea|theory|principle)\b.*?\b(of|for|behind|underlying)\b/i,
+            /\b(understand|comprehend|grasp|get|learn about)\b/i,
+            /\b(mechanism|function|operation|process|procedure|system|method|methodology)\b.*?\b(of|for|behind|underlying)\b/i,
+            /\b(basics|fundamentals|essentials|core|101|introduction|primer|overview)\b/i,
+            /\b(teach|show|guide|walk through|instruct|educate|tutor)\b.*?\b(me|us|about|on|regarding)\b/i,
+            /\b(can you|could you|would you) (explain|describe|clarify|elaborate on|tell me about)\b/i,
+            /\b(what|why|how|when|where|who) (exactly|specifically|precisely|actually) (is|are|does|do)\b/i,
+            /\bhelp me (understand|learn|grasp|comprehend)\b/i,
+            /\b(concept|theory|principle|idea|notion|model)\b.*?\b(of|behind|underlying|related to)\b/i,
+            /\b(what's|whats|what is) (the|a|an) (purpose|point|role|goal|objective|aim|function)\b/i,
+            /\b(how|why) (does|do|would|could|should|might) (this|that|it|they) (work|happen|occur|function)\b/i
+          ]
+        },
+        {
+          name: 'knowledge_explorer',
+          keyPhrases: ['knowledge', 'graph', 'explorer', 'explore', 'concepts', 'relationships', 'terms', 'connections', 'map', 'network', 'linked', 'related', 'ontology', 'taxonomy', 'structure', 'framework', 'overview', 'browse'],
+          examples: [
+            'explore knowledge graph',
+            'show me the knowledge explorer',
+            'what concepts do you know',
+            'explore market relationships',
+            'show all concepts',
+            'knowledge map',
+            'connections between metrics',
+            'related concepts to mvrv',
+            'what factors influence crash risk',
+            'map of on-chain indicators',
+            'network of market concepts'
+          ],
+          patterns: [
+            /\b(explore|browse|navigate|traverse|search|look through|examine|investigate)\b.*?\b(knowledge|concept|term|relationship|connection|network|graph|map)\b/i,
+            /\b(show|display|present|visualize|view|see)\b.*?\b(knowledge|concept|term|relationship|connection|network|graph|map)\b/i,
+            /\b(what|which) (concepts|terms|ideas|notions|entities|elements|factors|metrics|indicators)\b/i,
+            /\b(knowledge|concept|term) (graph|map|network|structure|framework|organization|hierarchy|tree)\b/i,
+            /\b(connections|relationships|links|associations|correlations)\b.*?\b(between|among|with|to|from)\b/i,
+            /\b(related|connected|linked|associated|correlated)\b.*?\b(to|with|concepts|terms|ideas|factors)\b/i,
+            /\b(what|which) (factors|elements|variables|metrics|indicators|conditions)\b.*?\b(influence|affect|impact|drive|determine)\b/i,
+            /\b(map|mapping|visualization|diagram|chart|graph)\b.*?\b(of|for|related to|showing|displaying)\b/i,
+            /\b(ontology|taxonomy|hierarchy|structure|organization|classification|categorization)\b/i,
+            /\b(overview|summary|outline|brief|snapshot|preview)\b.*?\b(of|for|on|about|regarding)\b/i,
+            /\b(how are) (concepts|terms|ideas|metrics|indicators) (related|connected|linked|organized|structured|arranged)\b/i,
+            /\b(what do you know about|tell me about|explain) (different|various|multiple) (concepts|terms|metrics|indicators)\b/i
+          ]
+        },
+        {
+          name: 'market_structure',
+          keyPhrases: ['market structure', 'support', 'resistance', 'trend', 'pattern', 'formation', 'technical', 'level', 'breakout', 'breakdown', 'divergence', 'momentum', 'volume', 'moving average', 'consolidation', 'range', 'channel'],
+          examples: [
+            'analyze current market structure',
+            'key support levels',
+            'critical resistance points',
+            'technical divergences',
+            'pattern formation analysis',
+            'trend strength assessment',
+            'key price levels',
+            'potential breakout zones',
+            'breakdown risk analysis',
+            'higher timeframe structure'
+          ],
+          patterns: [
+            /\b(market|price|chart) (structure|pattern|formation|framework|architecture|construction|setup|configuration)\b/i,
+            /\b(support|resistance|pivot|key|critical|important) (level|point|zone|area|line|price)\b/i,
+            /\b(trend|direction|movement|momentum|trajectory|path|course) (analysis|strength|quality|health|assessment|evaluation)\b/i,
+            /\b(technical|chart|price) (pattern|formation|structure|setup|configuration|arrangement)\b/i,
+            /\b(breakout|breakdown|break|breach|violation|penetration|crossing)\b.*?\b(above|below|through|past|over|under|resistance|support)\b/i,
+            /\b(divergence|convergence|agreement|disagreement|confirmation|contradiction)\b/i,
+            /\b(momentum|strength|force|power|vigor|energy|intensity|magnitude)\b/i,
+            /\b(volume|activity|participation|trading|transaction) (profile|analysis|assessment|pattern|structure|behavior)\b/i,
+            /\b(moving average|MA|EMA|SMA|WMA|VWMA)\b.*?\b(cross|crossover|golden cross|death cross|above|below|support|resistance)\b/i,
+            /\b(consolidation|accumulation|distribution|ranging|sideways|flat|horizontal)\b.*?\b(pattern|structure|phase|period|zone|area)\b/i,
+            /\b(range|channel|band|corridor|zone|path|boundary|limit)\b.*?\b(trading|bound|resistance|support|upper|lower)\b/i,
+            /\b(analyze|assess|evaluate|examine|study|inspect|review)\b.*?\b(market|price|chart|technical)\b/i,
+            /\b(higher|lower) timeframe\b/i,
+            /\b(bull|bear|bullish|bearish) (flag|pennant|wedge|triangle|rectangle|formation|pattern|structure)\b/i
+          ]
+        },
+        {
+          name: 'sentiment_analysis',
+          keyPhrases: ['sentiment', 'fear', 'greed', 'market mood', 'investor psychology', 'social sentiment', 'crowd psychology', 'optimism', 'pessimism', 'euphoria', 'capitulation', 'panic', 'emotion', 'feeling', 'attitude', 'perception'],
+          examples: [
+            'current market sentiment',
+            'fear and greed analysis',
+            'social media sentiment indicators',
+            'signs of market euphoria',
+            'capitulation indicators',
+            'investor psychology assessment',
+            'market mood evaluation',
+            'crowd psychology signs',
+            'optimism vs pessimism measurement',
+            'sentiment divergence from price'
+          ],
+          patterns: [
+            /\b(sentiment|mood|feeling|emotion|psychology|attitude|mindset|mentality|perception|outlook)\b.*?\b(market|investor|trader|participant|crowd|retail|institution)\b/i,
+            /\b(fear|greed|panic|euphoria|optimism|pessimism|anxiety|confidence|trust|distrust|doubt|certainty|hope|despair)\b/i,
+            /\b(fear and greed|fear & greed)\b.*?\b(index|indicator|measurement|reading|level|ratio|data|score)\b/i,
+            /\b(social|media|twitter|reddit|forum|community|public) (sentiment|opinion|view|perception|reaction|response|feeling)\b/i,
+            /\b(investor|trader|market|participant|crowd|retail|institutional) (psychology|behavior|attitude|reaction|response|thinking|belief|expectation)\b/i,
+            /\b(crowd|herd|group|mass|collective) (psychology|mentality|thinking|behavior|movement|action|reaction)\b/i,
+            /\b(bullish|bearish) (sentiment|feeling|outlook|expectation|view|opinion|consensus|agreement)\b/i,
+            /\b(market|investor|trader|public) (euphoria|mania|hysteria|frenzy|panic|fear|anxiety|worry|concern|capitulation|surrender|desperation)\b/i,
+            /\b(optimism|pessimism|positive|negative) (vs|versus|compared to|against|over)\b/i,
+            /\b(sentiment|mood|feeling|emotion|psychology) (divergence|convergence|disagreement|agreement|confirmation|contradiction)\b/i,
+            /\b(measure|assess|evaluate|gauge|quantify|analyze|examine) (sentiment|mood|feeling|psychology|perception|opinion)\b/i,
+            /\b(what are people|what is everyone|what's the market|how are investors) (feeling|thinking|saying|posting|believing)\b/i,
+            /\b(is|are) (investors|traders|the market|people) (feeling|being|becoming) (bullish|bearish|optimistic|pessimistic|fearful|greedy)\b/i
+          ]
+        },
+        {
+          name: 'black_swan_analysis',
+          keyPhrases: ['black swan', 'extreme event', 'tail risk', 'catastrophic', 'rare event', 'market shock', 'unexpected', 'outlier', 'crisis scenario', 'systemic risk', 'contagion', 'disorder', 'cascade', 'collapse', 'meltdown'],
+          examples: [
+            'black swan risk assessment',
+            'protection against extreme events',
+            'tail risk in current market',
+            'catastrophic scenario preparation',
+            'market shock vulnerability',
+            'unexpected event impact',
+            'outlier scenario analysis',
+            'crisis preparation strategy',
+            'systemic risk evaluation',
+            'largest tail risks today'
+          ],
+          patterns: [
+            /\b(black swan|extreme event|tail risk|catastrophic|rare event|market shock|unexpected|outlier|crisis scenario|systemic risk)\b/i,
+            /\b(black|extreme|catastrophic|rare|unexpected|extraordinary|unprecedented|unusual|exceptional|strange)\b.*?\b(event|occurrence|scenario|situation|circumstance|development|episode|incident)\b/i,
+            /\b(tail|extreme|far|remote|distant|unusual|unlikely)\b.*?\b(risk|probability|chance|likelihood|odds|possibility)\b/i,
+            /\b(market|financial|economic|systemic|systematic)\b.*?\b(shock|disruption|dislocation|turmoil|disturbance|upheaval|convulsion)\b/i,
+            /\b(unexpected|unpredictable|unforeseen|unanticipated|surprising|startling|astonishing|shocking)\b.*?\b(event|development|occurrence|change|shift|move)\b/i,
+            /\b(outlier|extreme|edge|boundary|fringe|limit|far-fetched|implausible|unlikely)\b.*?\b(scenario|situation|case|event|possibility|outcome|result)\b/i,
+            /\b(crisis|emergency|disaster|catastrophe|calamity|meltdown|breakdown|collapse)\b.*?\b(scenario|situation|condition|environment|event|preparation|readiness)\b/i,
+            /\b(systemic|systematic|structural|fundamental|basic|essential|inherent|intrinsic)\b.*?\b(risk|vulnerability|weakness|fragility|exposure|susceptibility)\b/i,
+            /\b(contagion|spread|propagation|transmission|diffusion|dissemination)\b.*?\b(risk|effect|impact|influence|consequence|result)\b/i,
+            /\b(cascade|chain reaction|domino effect|snowball effect|avalanche|ripple effect|butterfly effect)\b/i,
+            /\b(collapse|meltdown|breakdown|failure|disintegration|downfall|ruin|crash)\b.*?\b(market|system|structure|framework|organization|institution)\b/i,
+            /\b(disorder|chaos|turmoil|upheaval|disruption|disturbance|turbulence|commotion|mayhem|havoc)\b/i,
+            /\b(protect|safeguard|shield|defend|secure|insulate|buffer|hedge|guard)\b.*?\b(against|from|portfolio|assets|investment|position|wealth)\b/i
+          ]
+        },
+        {
+          name: 'donation_request',
+          keyPhrases: [
+            // Direct donation terms
+            'donate', 'donation', 'donating', 'donor', 'donate to', 'send donation',
+            'contribute', 'contribution', 'contributing', 'contributor', 
+            'support', 'supporter', 'supporting', 'sponsor', 'sponsoring', 'sponsorship',
+            'fund', 'funding', 'fundraising', 'finance', 'financial support',
+            'tip', 'tipping', 'gratuity', 'reward', 'compensate', 'back', 'backing',
+            
+            // Bitcoin payment terminology
+            'bitcoin address', 'btc address', 'wallet address', 'receive address',
+            'send bitcoin', 'send btc', 'send sats', 'send satoshis', 'send coins',
+            'transfer bitcoin', 'transfer btc', 'transfer crypto', 'payment',
+            'lightning address', 'lightning invoice', 'ln address', 'donate btc',
+            
+            // Action phrases
+            'send you', 'give you', 'pay you', 'transfer to you', 'support you',
+            'how to donate', 'where to donate', 'how can i donate', 'want to donate',
+            'would like to donate', 'interested in donating', 'willing to donate',
+            
+            // Single words that strongly indicate donation intent in context
+            'address', 'wallet', 'donate', 'crypto', 'bitcoin', 'btc', 'coin',
+            'payment', 'support', 'help out', 'contribute', 'tip',
+            
+            // Common typos and variations
+            'donat', 'donait', 'dontate', 'donete', 'bitcon', 'bitcoi', 'btcc',
+            'adress', 'adres', 'addres', 'walet', 'walett', 'recieve', 'receve',
+            
+            // Slang and shorthand
+            'sats', 'satoshis', 'bits', 'stack sats', 'sat stacking', 'coin',
+            'crypto', 'money', 'cash', 'funds', 'satosh',
+            
+            // Questions and patterns as phrases
+            'accept', 'how do i', 'where can i', 'is there a way', 'would you accept',
+            'have a wallet', 'have an address', 'share your', 'your bitcoin',
+            'your btc', 'your address', 'your wallet'
+          ],
+          examples: [
+            // Direct requests
+            'how can I donate',
+            'want to contribute',
+            'can I support this project',
+            'bitcoin donation',
+            'what\'s your wallet address',
+            'how do I send you bitcoin',
+            'can I send you coin',
+            'can I send you btc',
+            'send you bitcoin',
+            'give you some btc',
+            'bitcoin address',
+            'btc address',
+            'wallet',
+            'address',
+            'accept donations',
+            'where can I send BTC',
+            
+            // Questions
+            'do you accept donations',
+            'would you like some bitcoin',
+            'can i help support your work',
+            'is there a way to donate',
+            'how do i support the project',
+            'bitcoin adress pls',
+            'send u coins',
+            
+            // Variations
+            'i want to donate',
+            'lemme send btc',
+            'gib address',
+            'gimme ur address',
+            'wallet address',
+            'show me donation info',
+            'tip jar',
+            'take my money',
+            'shut up and take my bitcoin',
+            
+            // Short forms
+            'donate',
+            'support',
+            'btc',
+            'address',
+            'wallet',
+            'contribution',
+            'donation',
+            
+            // Typos and misspellings
+            'how 2 donate',
+            'bitcoim addres',
+            'bitcon walet',
+            'recieve address',
+            'donait',
+            'btcc',
+            
+            // Indirect/implied requests
+            'i appreciate this and want to support it',
+            'this is great work deserving payment',
+            'i should buy you a coffee',
+            'let me stack some sats for you',
+            'would love to show appreciation',
+            'this deserves some coin',
+            'how can i pay for this service',
+            'where do the donations go'
+          ],
+          patterns: [
+            // General donation patterns
+            /\b(donate|donate to|send|give|pay|support|fund|tip|contribute to)\b/i,
+            /\b(bitcoin|btc|crypto|coin|sats|satoshis)\b.*\b(address|wallet|payment|donation|send)\b/i,
+            /\b(address|wallet)\b.*\b(bitcoin|btc|crypto|coin)\b/i,
+            /\b(send|give|transfer|pay)\b.*\b(you|your)\b/i,
+            
+            // Phrases with common typos
+            /\b(bit.?co.?n|btc?)\b.*\b(ad?d?res|wal+et)/i,
+            /\b(don[ae]t|contr[ib]b?ut)/i,
+            
+            // Short direct questions
+            /^(address|wallet|bitcoin|btc|donate|tip|help|support)\??$/i,
+            
+            // Very common requests with potential typos or shorthand
+            /\bsend\s*(yo?u|me).*\b(btc|coin|$|money|€)/i,
+            /\b(where|how)\b.*\b(send|donate|contribute|support)\b/i,
+            
+            // Emojis often used with donations
+            /💰|💸|💲|💵|💴|💶|💷|🪙|₿|⚡/,
+            
+            // Multi-word patterns with word order flexibility
+            /\b(how|where|can|do).*\b(donate|contribute|support|fund|sponsor|tip)\b/i,
+            /\b(would|like|want|wish|desire|hope).*\b(donate|contribute|support|fund|sponsor|tip)\b/i,
+            /\b(wallet|address|bitcoin|btc|coin|crypto).*\b(share|give|provide|show|display|reveal)\b/i,
+            
+            // Conversational patterns
+            /\b(appreciate|thankful|grateful|indebted).*\b(work|effort|project|tool|bot|service)\b/i,
+            /\b(help|support|fund|back|finance).*\b(project|development|work|effort|service|tool|bot)\b/i,
+            /\b(buy|get|purchase|offer).*\b(coffee|beer|drink|lunch|dinner)\b/i,
+            
+            // Partial word matches for typos
+            /\bbitco/i,
+            /\bwalle/i,
+            /\baddre/i,
+            /\bdona/i,
+            
+            // Intent signifiers
+            /\b(can|could|would|may|might).*\b(donate|contribute|support|fund|sponsor|tip|give|send)\b/i,
+            /\b(looking|want|like|hope|wish|desire).*\b(donate|contribute|support|fund|sponsor|tip|give|send)\b/i,
+            /\b(accept|take|receive|welcome).*\b(donation|contribution|support|funding|sponsorship|tips|money|payment)\b/i,
+            
+            // Very specific donation terms
+            /\b(lightning network|ln url|lightning address|lightning invoice|lnurl|ln address|ln invoice)\b/i,
+            /\b(sat|sats|satoshi|satoshis).*\b(send|give|donate|contribute|support)\b/i,
+            
+            // Format-specific patterns
+            /\bbc1[a-z0-9]{6,}/i,  // Bitcoin bech32 address hint
+            /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/i  // Bitcoin legacy/segwit address hint
+          ]
+        }
+      ];
+    }
   
   /**
    * Feature words for better intent classification
    */
-  setupFeatureWords() {
-    return {
-      risk_assessment: ['risk', 'probability', 'chance', 'odds', 'likelihood', 'crash', 'correction', 'probability', 'danger', 'vulnerability', 'threat', 'downside'],
-      strategy_advice: ['strategy', 'advice', 'recommend', 'should', 'buy', 'sell', 'hold', 'action', 'position', 'allocation', 'portfolio', 'exposure', 'hedge', 'protect'],
-      metric_analysis: ['metric', 'mvrv', 'nvt', 'on-chain', 'ratio', 'indicator', 'address', 'volume', 'transaction', 'puell', 'sopr', 'hash ribbon', 'stablecoin'],
-      market_prediction: ['predict', 'forecast', 'projection', 'future', 'next', 'coming', 'outlook', 'will', 'anticipate', 'expected', 'likely', 'probabilities'],
-      scenario_simulation: ['what if', 'scenario', 'simulation', 'rise', 'drop', 'fall', 'increase', 'decrease', 'crash', 'rally', 'breakout', 'cascade', 'liquidation'],
-      historical_comparison: ['historical', 'history', 'previous', 'past', 'before', 'compare', 'similar', 'pattern', 'precedent', 'analogous', 'resembles', 'like'],
-      educational: ['explain', 'how', 'what is', 'mean', 'definition', 'understand', 'learn', 'works', 'mechanism', 'principle', 'function', 'concept'],
-      knowledge_explorer: ['knowledge', 'graph', 'explorer', 'explore', 'concepts', 'map', 'terms', 'relationship', 'connections', 'network', 'linked', 'related'],
-      market_structure: ['structure', 'support', 'resistance', 'trend', 'pattern', 'technical', 'formation', 'level', 'breakout', 'breakdown', 'divergence', 'range'],
-      sentiment_analysis: ['sentiment', 'fear', 'greed', 'mood', 'psychology', 'social', 'crowd', 'euphoria', 'capitulation', 'pessimism', 'optimism', 'emotion'],
-      black_swan_analysis: ['black swan', 'extreme', 'tail risk', 'catastrophic', 'rare', 'shock', 'unexpected', 'outlier', 'crisis', 'systemic', 'collapse']
-    };
-  }
-  
+    setupFeatureWords() {
+      return {
+        risk_assessment: ['risk', 'probability', 'chance', 'odds', 'likelihood', 'crash', 'correction', 'probability', 'danger', 'vulnerability', 'threat', 'downside', 'hazard', 'exposure', 'possibility', 'drop', 'dump', 'decline', 'fall', 'collapse', 'dip', 'probability', 'likely'],
+        
+        strategy_advice: ['strategy', 'advice', 'recommend', 'should', 'buy', 'sell', 'hold', 'action', 'position', 'allocation', 'portfolio', 'exposure', 'hedge', 'protect', 'approach', 'plan', 'idea', 'guidance', 'suggestion', 'tactic', 'method', 'play', 'move', 'decision', 'option', 'opportunity', 'timing', 'entry', 'exit'],
+        
+        metric_analysis: ['metric', 'mvrv', 'nvt', 'on-chain', 'ratio', 'indicator', 'address', 'volume', 'transaction', 'puell', 'sopr', 'hash ribbon', 'stablecoin', 'measurement', 'analyze', 'assessment', 'evaluation', 'reading', 'factor', 'parameter', 'stat', 'figure', 'health', 'activity', 'blockchain', 'network', 'fundamental'],
+        
+        market_prediction: ['predict', 'forecast', 'projection', 'future', 'next', 'coming', 'outlook', 'will', 'anticipate', 'expected', 'likely', 'probabilities', 'projection', 'expectation', 'estimation', 'prognosis', 'thinking', 'prophesy', 'guess', 'project', 'anticipation', 'extrapolation', 'prospect', 'potential', 'possibility', 'scenario', 'vision'],
+        
+        scenario_simulation: ['what if', 'scenario', 'simulation', 'rise', 'drop', 'fall', 'increase', 'decrease', 'crash', 'rally', 'breakout', 'cascade', 'liquidation', 'model', 'case', 'situation', 'circumstance', 'condition', 'event', 'eventuality', 'possibility', 'supposition', 'assumption', 'premise', 'hypothesis', 'consideration', 'situation'],
+        
+        historical_comparison: ['historical', 'history', 'previous', 'past', 'before', 'compare', 'similar', 'pattern', 'precedent', 'analogous', 'resembles', 'like', 'same', 'equivalent', 'correspondent', 'matching', 'parallel', 'resemblance', 'similarity', 'analogy', 'correlation', 'relationship', 'connection', 'example', 'instance', 'case', 'occurrence'],
+        
+        educational: ['explain', 'how', 'what is', 'mean', 'definition', 'understand', 'learn', 'works', 'mechanism', 'principle', 'function', 'concept', 'theory', 'idea', 'notion', 'fundamentals', 'basics', 'element', 'component', 'factor', 'aspect', 'feature', 'characteristic', 'attribute', 'quality', 'property', 'detail', 'specifics', 'overview', 'summary'],
+        
+        knowledge_explorer: ['knowledge', 'graph', 'explorer', 'explore', 'concepts', 'map', 'terms', 'relationship', 'connections', 'network', 'linked', 'related', 'structure', 'framework', 'system', 'organization', 'arrangement', 'order', 'hierarchy', 'taxonomy', 'classification', 'category', 'grouping', 'class', 'type', 'sort', 'variety', 'ontology', 'schema'],
+        
+        market_structure: ['structure', 'support', 'resistance', 'trend', 'pattern', 'technical', 'formation', 'level', 'breakout', 'breakdown', 'divergence', 'range', 'channel', 'band', 'corridor', 'zone', 'area', 'region', 'section', 'portion', 'segment', 'division', 'bracket', 'parameter', 'boundary', 'limit', 'threshold', 'ceiling', 'floor', 'wall', 'barrier'],
+        
+        sentiment_analysis: ['sentiment', 'fear', 'greed', 'mood', 'psychology', 'social', 'crowd', 'euphoria', 'capitulation', 'pessimism', 'optimism', 'emotion', 'feeling', 'attitude', 'opinion', 'view', 'perception', 'perspective', 'outlook', 'stance', 'position', 'standpoint', 'disposition', 'temper', 'spirit', 'mind', 'thinking', 'belief', 'conviction', 'confidence'],
+        
+        black_swan_analysis: ['black swan', 'extreme', 'tail risk', 'catastrophic', 'rare', 'shock', 'unexpected', 'outlier', 'crisis', 'systemic', 'collapse', 'extraordinary', 'exceptional', 'unusual', 'unprecedented', 'anomalous', 'irregular', 'freak', 'strange', 'bizarre', 'peculiar', 'curious', 'odd', 'remarkable', 'striking', 'incredible', 'unbelievable', 'unthinkable', 'unimaginable'],
+        
+        donation_request: ['donate', 'donation', 'contribute', 'support', 'tip', 'address', 'wallet', 'send', 'bitcoin', 'btc', 'coin', 'crypto', 'money', 'fund', 'sponsor', 'transfer', 'pay', 'payment', 'give', 'cash', 'sats', 'satoshis', 'bits', 'currency', 'gift', 'offering', 'present', 'gratuity', 'reward', 'incentive', 'compensation', 'remuneration', 'recompense', 'fee']
+      };
+    }
+      
   /**
    * Classify intent using compromise.js for enhanced pattern recognition
    * @param {string} message - User's message
    * @returns {Object} Intent classification with confidence score
    */
-  classifyIntent(message) {
-    const normalizedMessage = message.toLowerCase();
-    
-    // Use compromise.js for more natural pattern matching if available
-    if (window.nlp) {
-      try {
-        const doc = window.nlp(message);
-        
-        // Risk assessment intent patterns
-        if (doc.has('(what|how) (is|about) (the |)current risk') || 
-            doc.has('#RiskTerm of (crash|correction|drop)') ||
-            doc.has('how (risky|likely) is (bitcoin|btc)') ||
-            doc.has('crash (probability|risk|chance)') ||
-            doc.has('chance of (crash|dip|correction)')) {
-          return {
-            intent: 'risk_assessment',
-            confidence: 0.95,
-            matchType: 'nlp-pattern'
-          };
-        }
-        
-        // Strategy advice intent patterns
-        if (doc.has('(what|how) should i (do|buy|sell|invest|trade)') || 
-            doc.has('#StrategyTerm for (current|this) market') ||
-            doc.has('(recommend|suggest) (position|allocation)') ||
-            doc.has('good time to (buy|sell|enter|exit)')) {
-          return {
-            intent: 'strategy_advice',
-            confidence: 0.92,
-            matchType: 'nlp-pattern'
-          };
-        }
-        
-        // Metric analysis intent patterns
-        if (doc.has('explain #CryptoMetric') ||
-            doc.has('(what|how) (is|are|about) #CryptoMetric') ||
-            doc.has('(what|how) (is|are|about|do) (the |)metric') ||
-            doc.has('on-chain (metrics|analysis|data)')) {
+    classifyIntent(message) {
+      const normalizedMessage = message.toLowerCase();
+      
+      // Use compromise.js for more natural pattern matching if available
+      if (window.nlp) {
+        try {
+          const doc = window.nlp(message);
           
-          // Extract concept for educational intents
-          const concept = this.extractConcept(normalizedMessage);
-          
-          return {
-            intent: 'metric_analysis',
-            confidence: 0.93,
-            matchType: 'nlp-pattern',
-            concept: concept ? concept.id : null
-          };
-        }
-        
-        // Market prediction intent patterns
-        if (doc.has('(predict|forecast|projection|outlook) (for|about|on)') ||
-            doc.has('what will happen (next|in the future|soon)') ||
-            doc.has('(future|next|coming) (month|week|days|time)') ||
-            doc.has('(will|going to) (happen|occur|take place)')) {
-          return {
-            intent: 'market_prediction',
-            confidence: 0.9,
-            matchType: 'nlp-pattern'
-          };
-        }
-        
-        // Scenario simulation intent patterns
-        if (doc.has('what if (bitcoin|btc|price|market) (goes|drops|falls|rises|increases|decreases|crashes)') ||
-            doc.has('scenario (where|with|of) (price|bitcoin|btc)') ||
-            doc.has('simulate (crash|rally|drop|rise)')) {
-          return {
-            intent: 'scenario_simulation',
-            confidence: 0.94,
-            matchType: 'nlp-pattern'
-          };
-        }
-        
-        // Historical comparison intent patterns
-        if (doc.has('(compare|comparison) (to|with) (history|past|previous)') ||
-            doc.has('(historical|history|past) (crash|rally|pattern|cycle)') ||
-            doc.has('(similar|like) (situation|condition|event) (in|from) (past|before)')) {
-          return {
-            intent: 'historical_comparison',
-            confidence: 0.91,
-            matchType: 'nlp-pattern'
-          };
-        }
-        
-        // Educational intent patterns
-        if (doc.has('(explain|tell me about|what is|how does) (the|) (model|calculation|algorithm|risk|cycle)') ||
-            doc.has('(help|explain|understand) (me|) (how|what|why)')) {
-          
-          // Extract concept for educational intents
-          const concept = this.extractConcept(normalizedMessage);
-          
-          return {
-            intent: 'educational',
-            confidence: 0.89,
-            matchType: 'nlp-pattern',
-            concept: concept ? concept.id : null
-          };
-        }
-        
-        // Knowledge explorer intent patterns
-        if (doc.has('(explore|show|display) (knowledge|concept|term)') ||
-            doc.has('knowledge (graph|explorer|map)') ||
-            doc.has('show (me|) (the|) (knowledge|concept|relationship)')) {
-          return {
-            intent: 'knowledge_explorer',
-            confidence: 0.95,
-            matchType: 'nlp-pattern'
-          };
-        }
-      } catch (err) {
-        console.error('Error in NLP intent classification:', err);
-        // Fall through to traditional classification methods
-      }
-    }
-    
-    // Extract knowledge graph concept if present
-    const concept = this.extractConcept(normalizedMessage);
-    
-    // Extract market phase if present
-    const marketPhase = this.extractMarketPhase(normalizedMessage);
-    
-    // Extract black swan reference if present
-    const blackSwan = this.extractBlackSwan(normalizedMessage);
-    
-    // First, check for exact example matches
-    for (const intent of this.intentPatterns) {
-      for (const example of intent.examples) {
-        if (normalizedMessage.includes(example.toLowerCase())) {
-          // Enhance with concept if found
-          if (concept && intent.name === 'educational') {
+          // Risk assessment intent patterns
+          if (doc.has('(what|how) (is|about) (the |)current risk') || 
+              doc.has('#RiskTerm of (crash|correction|drop)') ||
+              doc.has('how (risky|likely) is (bitcoin|btc)') ||
+              doc.has('crash (probability|risk|chance)') ||
+              doc.has('chance of (crash|dip|correction)')) {
             return {
-              intent: intent.name,
-              confidence: 0.98,
-              matchType: 'example-with-concept',
-              concept: concept.id
+              intent: 'risk_assessment',
+              confidence: 0.95,
+              matchType: 'nlp-pattern'
             };
           }
           
-          // Enhance with market phase if found
-          if (marketPhase && (intent.name === 'risk_assessment' || intent.name === 'strategy_advice')) {
+          // Strategy advice intent patterns
+          if (doc.has('(what|how) should i (do|buy|sell|invest|trade)') || 
+              doc.has('#StrategyTerm for (current|this) market') ||
+              doc.has('(recommend|suggest) (position|allocation)') ||
+              doc.has('good time to (buy|sell|enter|exit)')) {
             return {
-              intent: intent.name,
-              confidence: 0.97,
-              matchType: 'example-with-phase',
-              marketPhase: marketPhase.phase
+              intent: 'strategy_advice',
+              confidence: 0.92,
+              matchType: 'nlp-pattern'
             };
           }
           
-          // Enhance with black swan if found
-          if (blackSwan && intent.name === 'black_swan_analysis') {
+          // Metric analysis intent patterns
+          if (doc.has('explain #CryptoMetric') ||
+              doc.has('(what|how) (is|are|about) #CryptoMetric') ||
+              doc.has('(what|how) (is|are|about|do) (the |)metric') ||
+              doc.has('on-chain (metrics|analysis|data)')) {
+            
+            // Extract concept for educational intents
+            const concept = this.extractConcept(normalizedMessage);
+            
             return {
-              intent: intent.name,
-              confidence: 0.99,
-              matchType: 'example-with-blackswan',
-              blackSwan: blackSwan.event
+              intent: 'metric_analysis',
+              confidence: 0.93,
+              matchType: 'nlp-pattern',
+              concept: concept ? concept.id : null
             };
           }
           
-          return {
-            intent: intent.name,
-            confidence: 0.95,
-            matchType: 'example'
-          };
+          // Market prediction intent patterns
+          if (doc.has('(predict|forecast|projection|outlook) (for|about|on)') ||
+              doc.has('what will happen (next|in the future|soon)') ||
+              doc.has('(future|next|coming) (month|week|days|time)') ||
+              doc.has('(will|going to) (happen|occur|take place)')) {
+            return {
+              intent: 'market_prediction',
+              confidence: 0.9,
+              matchType: 'nlp-pattern'
+            };
+          }
+          
+          // Scenario simulation intent patterns
+          if (doc.has('what if (bitcoin|btc|price|market) (goes|drops|falls|rises|increases|decreases|crashes)') ||
+              doc.has('scenario (where|with|of) (price|bitcoin|btc)') ||
+              doc.has('simulate (crash|rally|drop|rise)')) {
+            return {
+              intent: 'scenario_simulation',
+              confidence: 0.94,
+              matchType: 'nlp-pattern'
+            };
+          }
+          
+            // Historical comparison intent patterns
+            if (doc.has('(compare|comparison) (to|with) (history|past|previous)') ||
+                doc.has('(historical|history|past) (crash|rally|pattern|cycle)') ||
+                doc.has('(similar|like) (situation|condition|event) (in|from) (past|before)') ||
+                doc.has('(similarity|similarities) between') ||
+                doc.has('(wondering|curious) (if|about) (similar|comparison|parallels)') || // Added "parallels" here
+                doc.has('(today|current|present) (versus|vs|compared to) (20\\d\\d|previous|past)') ||
+                doc.has('before the 20\\d\\d') ||
+                doc.has('(any|some) (similarity|similarities|parallels)') ||
+                doc.has('(market structure|market) (like|similar|parallels)') || // Enhanced this pattern
+                doc.has('(crash|crashed) in (late|early) 20\\d\\d')) { // Added this pattern specifically for crashes
+              return {
+                intent: 'historical_comparison',
+                confidence: 0.93, // Increased confidence score
+                matchType: 'nlp-pattern'
+              };
+            }
+          
+          // Educational intent patterns
+          if (doc.has('(explain|tell me about|what is|how does) (the|) (model|calculation|algorithm|risk|cycle)') ||
+              doc.has('(help|explain|understand) (me|) (how|what|why)')) {
+            
+            // Extract concept for educational intents
+            const concept = this.extractConcept(normalizedMessage);
+            
+            return {
+              intent: 'educational',
+              confidence: 0.89,
+              matchType: 'nlp-pattern',
+              concept: concept ? concept.id : null
+            };
+          }
+          
+          // Knowledge explorer intent patterns
+          if (doc.has('(explore|show|display) (knowledge|concept|term)') ||
+              doc.has('knowledge (graph|explorer|map)') ||
+              doc.has('show (me|) (the|) (knowledge|concept|relationship)')) {
+            return {
+              intent: 'knowledge_explorer',
+              confidence: 0.95,
+              matchType: 'nlp-pattern'
+            };
+          }
+          
+          // Donation request intent patterns - comprehensive check
+          if (doc.has('(donate|donate to|contribution|support) (bitcoin|btc|project)') ||
+              doc.has('(send|give|pay) (you|your) (bitcoin|btc|coin|money)') ||
+              doc.has('(bitcoin|btc|wallet) address') ||
+              doc.has('(where|how) (can|do) (i|we) (donate|send|contribute)') ||
+              (normalizedMessage.length < 15 && 
+              (doc.has('donate') || doc.has('address') || doc.has('wallet') || 
+              doc.has('(send|give) you') || doc.has('bitcoin') || doc.has('btc')))) {
+            return {
+              intent: 'donation_request',
+              confidence: 0.96,
+              matchType: 'nlp-pattern'
+            };
+          }
+        } catch (err) {
+          console.error('Error in NLP intent classification:', err);
+          // Fall through to traditional classification methods
         }
       }
-    }
-    
-    // Next, check for key phrase matches
-    const keyPhraseMatches = {};
-    
-    for (const intent of this.intentPatterns) {
-      let matchCount = 0;
-      let hasExcludedPhrase = false;
       
-      // Check for key phrases
-      intent.keyPhrases.forEach(phrase => {
-        if (normalizedMessage.includes(phrase.toLowerCase())) {
-          matchCount++;
+      // Extract knowledge graph concept if present
+      const concept = this.extractConcept(normalizedMessage);
+      
+      // Extract market phase if present
+      const marketPhase = this.extractMarketPhase(normalizedMessage);
+      
+      // Extract black swan reference if present
+      const blackSwan = this.extractBlackSwan(normalizedMessage);
+      
+      // NEW: Check for regex patterns in each intent definition
+      for (const intent of this.intentPatterns) {
+        if (intent.patterns && Array.isArray(intent.patterns)) {
+          for (const pattern of intent.patterns) {
+            if (pattern.test(normalizedMessage)) {
+              // Apply the same concept/phase/blackSwan enhancements we do for examples
+              if (concept && intent.name === 'educational') {
+                return {
+                  intent: intent.name,
+                  confidence: 0.94,
+                  matchType: 'pattern-with-concept',
+                  concept: concept.id
+                };
+              }
+              
+              if (marketPhase && (intent.name === 'risk_assessment' || intent.name === 'strategy_advice')) {
+                return {
+                  intent: intent.name,
+                  confidence: 0.93,
+                  matchType: 'pattern-with-phase',
+                  marketPhase: marketPhase.phase
+                };
+              }
+              
+              if (blackSwan && intent.name === 'black_swan_analysis') {
+                return {
+                  intent: intent.name,
+                  confidence: 0.95,
+                  matchType: 'pattern-with-blackswan',
+                  blackSwan: blackSwan.event
+                };
+              }
+              
+              return {
+                intent: intent.name,
+                confidence: 0.92,
+                matchType: 'pattern'
+              };
+            }
+          }
         }
-      });
+      }
       
-      // Check for excluded phrases
-      if (intent.excludePhrases) {
-        intent.excludePhrases.forEach(phrase => {
+      // First, check for exact example matches
+      for (const intent of this.intentPatterns) {
+        for (const example of intent.examples) {
+          if (normalizedMessage.includes(example.toLowerCase())) {
+            // Enhance with concept if found
+            if (concept && intent.name === 'educational') {
+              return {
+                intent: intent.name,
+                confidence: 0.98,
+                matchType: 'example-with-concept',
+                concept: concept.id
+              };
+            }
+            
+            // Enhance with market phase if found
+            if (marketPhase && (intent.name === 'risk_assessment' || intent.name === 'strategy_advice')) {
+              return {
+                intent: intent.name,
+                confidence: 0.97,
+                matchType: 'example-with-phase',
+                marketPhase: marketPhase.phase
+              };
+            }
+            
+            // Enhance with black swan if found
+            if (blackSwan && intent.name === 'black_swan_analysis') {
+              return {
+                intent: intent.name,
+                confidence: 0.99,
+                matchType: 'example-with-blackswan',
+                blackSwan: blackSwan.event
+              };
+            }
+            
+            return {
+              intent: intent.name,
+              confidence: 0.95,
+              matchType: 'example'
+            };
+          }
+        }
+      }
+      
+      // Next, check for key phrase matches
+      const keyPhraseMatches = {};
+      
+      for (const intent of this.intentPatterns) {
+        let matchCount = 0;
+        let hasExcludedPhrase = false;
+        
+        // Check for key phrases
+        intent.keyPhrases.forEach(phrase => {
           if (normalizedMessage.includes(phrase.toLowerCase())) {
-            hasExcludedPhrase = true;
+            matchCount++;
           }
         });
+        
+        // Check for excluded phrases
+        if (intent.excludePhrases) {
+          intent.excludePhrases.forEach(phrase => {
+            if (normalizedMessage.includes(phrase.toLowerCase())) {
+              hasExcludedPhrase = true;
+            }
+          });
+        }
+        
+        if (matchCount > 0 && !hasExcludedPhrase) {
+          keyPhraseMatches[intent.name] = {
+            count: matchCount,
+            confidence: Math.min(0.9, 0.6 + (matchCount / intent.keyPhrases.length) * 0.3)
+          };
+        }
       }
       
-      if (matchCount > 0 && !hasExcludedPhrase) {
-        keyPhraseMatches[intent.name] = {
-          count: matchCount,
-          confidence: Math.min(0.9, 0.6 + (matchCount / intent.keyPhrases.length) * 0.3)
-        };
-      }
-    }
-    
-    // If we have key phrase matches, find the best one
-    if (Object.keys(keyPhraseMatches).length > 0) {
-      const bestMatch = Object.entries(keyPhraseMatches)
-        .sort((a, b) => b[1].confidence - a[1].confidence)[0];
-      
-      // Enhance with concept if found
-      if (concept && bestMatch[0] === 'educational') {
+      // If we have key phrase matches, find the best one
+      if (Object.keys(keyPhraseMatches).length > 0) {
+        const bestMatch = Object.entries(keyPhraseMatches)
+          .sort((a, b) => b[1].confidence - a[1].confidence)[0];
+        
+        // Enhance with concept if found
+        if (concept && bestMatch[0] === 'educational') {
+          return {
+            intent: bestMatch[0],
+            confidence: Math.min(0.95, bestMatch[1].confidence + 0.05),
+            matchType: 'keyPhrase-with-concept',
+            concept: concept.id
+          };
+        }
+        
+        // Enhance with market phase if found
+        if (marketPhase && (bestMatch[0] === 'risk_assessment' || bestMatch[0] === 'strategy_advice')) {
+          return {
+            intent: bestMatch[0],
+            confidence: Math.min(0.95, bestMatch[1].confidence + 0.05),
+            matchType: 'keyPhrase-with-phase',
+            marketPhase: marketPhase.phase
+          };
+        }
+        
+        // Enhance with black swan if found
+        if (blackSwan && bestMatch[0] === 'black_swan_analysis') {
+          return {
+            intent: bestMatch[0],
+            confidence: Math.min(0.95, bestMatch[1].confidence + 0.05),
+            matchType: 'keyPhrase-with-blackswan',
+            blackSwan: blackSwan.event
+          };
+        }
+        
         return {
           intent: bestMatch[0],
-          confidence: Math.min(0.95, bestMatch[1].confidence + 0.05),
-          matchType: 'keyPhrase-with-concept',
+          confidence: bestMatch[1].confidence,
+          matchType: 'keyPhrase'
+        };
+      }
+      
+      // If we found a concept, it's likely educational intent
+      if (concept && /\b(what|explain|how|tell me about)\b/i.test(normalizedMessage)) {
+        return {
+          intent: 'educational',
+          confidence: 0.85,
+          matchType: 'concept-based',
           concept: concept.id
         };
       }
       
-      // Enhance with market phase if found
-      if (marketPhase && (bestMatch[0] === 'risk_assessment' || bestMatch[0] === 'strategy_advice')) {
+      // If we found a market phase reference
+      if (marketPhase && /\b(risk|strategy|position|what should|how should)\b/i.test(normalizedMessage)) {
         return {
-          intent: bestMatch[0],
-          confidence: Math.min(0.95, bestMatch[1].confidence + 0.05),
-          matchType: 'keyPhrase-with-phase',
+          intent: 'market_prediction',
+          confidence: 0.82,
+          matchType: 'phase-based',
           marketPhase: marketPhase.phase
         };
       }
       
-      // Enhance with black swan if found
-      if (blackSwan && bestMatch[0] === 'black_swan_analysis') {
+      // If we found a black swan reference
+      if (blackSwan) {
         return {
-          intent: bestMatch[0],
-          confidence: Math.min(0.95, bestMatch[1].confidence + 0.05),
-          matchType: 'keyPhrase-with-blackswan',
+          intent: 'black_swan_analysis',
+          confidence: 0.88,
+          matchType: 'blackswan-based',
           blackSwan: blackSwan.event
         };
       }
       
-      return {
-        intent: bestMatch[0],
-        confidence: bestMatch[1].confidence,
-        matchType: 'keyPhrase'
-      };
-    }
-    
-    // If we found a concept, it's likely educational intent
-    if (concept && /\b(what|explain|how|tell me about)\b/i.test(normalizedMessage)) {
-      return {
-        intent: 'educational',
-        confidence: 0.85,
-        matchType: 'concept-based',
-        concept: concept.id
-      };
-    }
-    
-    // If we found a market phase reference
-    if (marketPhase && /\b(risk|strategy|position|what should|how should)\b/i.test(normalizedMessage)) {
-      return {
-        intent: 'market_prediction',
-        confidence: 0.82,
-        matchType: 'phase-based',
-        marketPhase: marketPhase.phase
-      };
-    }
-    
-    // If we found a black swan reference
-    if (blackSwan) {
-      return {
-        intent: 'black_swan_analysis',
-        confidence: 0.88,
-        matchType: 'blackswan-based',
-        blackSwan: blackSwan.event
-      };
-    }
-    
-    // Finally, use word frequency approach for more fuzzy matching
-    const wordScores = {};
-    const messageWords = normalizedMessage.split(/\W+/);
-    
-    // Calculate a score for each intent based on word matches
-    Object.entries(this.featureWords).forEach(([intent, words]) => {
-      let score = 0;
+      // Finally, use word frequency approach for more fuzzy matching
+      const wordScores = {};
+      const messageWords = normalizedMessage.split(/\W+/);
       
-      words.forEach(word => {
-        if (normalizedMessage.includes(word)) {
-          // Single words get less weight than phrases
-          score += word.includes(' ') ? 2 : 1;
+      // Calculate a score for each intent based on word matches
+      Object.entries(this.featureWords).forEach(([intent, words]) => {
+        let score = 0;
+        
+        words.forEach(word => {
+          if (normalizedMessage.includes(word)) {
+            // Single words get less weight than phrases
+            score += word.includes(' ') ? 2 : 1;
+          }
+        });
+        
+        if (score > 0) {
+          // Normalize by number of words in the intent
+          wordScores[intent] = score / words.length;
         }
       });
       
-      if (score > 0) {
-        // Normalize by number of words in the intent
-        wordScores[intent] = score / words.length;
-      }
-    });
-    
-    // If we have word matches, find the best one
-    if (Object.keys(wordScores).length > 0) {
-      const bestMatch = Object.entries(wordScores)
-        .sort((a, b) => b[1] - a[1])[0];
-      
-      // Enhance with concept if found
-      if (concept && bestMatch[0] === 'educational') {
+      // If we have word matches, find the best one
+      if (Object.keys(wordScores).length > 0) {
+        const bestMatch = Object.entries(wordScores)
+          .sort((a, b) => b[1] - a[1])[0];
+        
+        // Enhance with concept if found
+        if (concept && bestMatch[0] === 'educational') {
+          return {
+            intent: bestMatch[0],
+            confidence: Math.min(0.85, 0.5 + bestMatch[1] * 0.3 + 0.05),
+            matchType: 'wordFrequency-with-concept',
+            concept: concept.id
+          };
+        }
+        
+        // Enhance with market phase if found
+        if (marketPhase && (bestMatch[0] === 'risk_assessment' || bestMatch[0] === 'strategy_advice')) {
+          return {
+            intent: bestMatch[0],
+            confidence: Math.min(0.85, 0.5 + bestMatch[1] * 0.3 + 0.05),
+            matchType: 'wordFrequency-with-phase',
+            marketPhase: marketPhase.phase
+          };
+        }
+        
         return {
           intent: bestMatch[0],
-          confidence: Math.min(0.85, 0.5 + bestMatch[1] * 0.3 + 0.05),
-          matchType: 'wordFrequency-with-concept',
-          concept: concept.id
+          confidence: Math.min(0.8, 0.5 + bestMatch[1] * 0.3),
+          matchType: 'wordFrequency'
         };
       }
       
-      // Enhance with market phase if found
-      if (marketPhase && (bestMatch[0] === 'risk_assessment' || bestMatch[0] === 'strategy_advice')) {
-        return {
-          intent: bestMatch[0],
-          confidence: Math.min(0.85, 0.5 + bestMatch[1] * 0.3 + 0.05),
-          matchType: 'wordFrequency-with-phase',
-          marketPhase: marketPhase.phase
-        };
+      // Handle very short queries as a special case
+      if (normalizedMessage.length < 12) {
+        // Check if it might be a donation request
+        if (/\b(btc|wallet|address|donate|send|give|coin|payment|crypto|bitcoin|donation)\b/i.test(normalizedMessage)) {
+          return {
+            intent: 'donation_request',
+            confidence: 0.75,
+            matchType: 'short-query'
+          };
+        }
       }
       
+      // Fallback to default intent
       return {
-        intent: bestMatch[0],
-        confidence: Math.min(0.8, 0.5 + bestMatch[1] * 0.3),
-        matchType: 'wordFrequency'
+        intent: 'general_query',
+        confidence: 0.3,
+        matchType: 'fallback'
       };
     }
-    
-    // Fallback to default intent
-    return {
-      intent: 'general_query',
-      confidence: 0.3,
-      matchType: 'fallback'
-    };
-  }
   
   /**
    * Extract entities from the message

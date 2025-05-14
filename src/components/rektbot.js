@@ -40,39 +40,46 @@ function createSafeChart(container, chartType, chartConfig) {
   // Clear the container first
   container.innerHTML = '';
   
-  // Create new canvas
+  // Create new canvas with a unique ID
   const canvas = document.createElement('canvas');
-  canvas.id = `rektbot-chart-${Date.now()}`;
+  canvas.id = `rektbot-chart-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   canvas.style.width = '100%';
   canvas.style.height = '250px';
   
   // Add canvas to container
   container.appendChild(canvas);
   
-  // Create chart with error handling
-  try {
-    // Check if Chart is accessible
-    if (typeof Chart === 'undefined') {
-      if (typeof window.Chart !== 'undefined') {
-        // Use Chart from window object if available
-        window.Chart = window.Chart;
-      } else {
-        throw new Error("Chart.js library not available");
+  // Delay chart creation to ensure canvas is fully rendered
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      try {
+        // Check if Chart is accessible
+        if (typeof Chart === 'undefined') {
+          if (typeof window.Chart !== 'undefined') {
+            window.Chart = window.Chart;
+          } else {
+            throw new Error("Chart.js library not available");
+          }
+        }
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          throw new Error("Cannot get canvas context");
+        }
+        
+        // Create and return chart with the provided config
+        const chart = new Chart(ctx, chartConfig);
+        console.log(`Chart created successfully: ${chartType}`);
+        resolve(chart);
+        return chart;
+      } catch (e) {
+        console.error(`Error creating ${chartType} chart:`, e);
+        container.innerHTML = `<div style="color: red; text-align: center; margin-top: 20px;">Error creating chart: ${e.message}</div>`;
+        resolve(null);
+        return null;
       }
-    }
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error("Cannot get canvas context");
-    }
-    
-    // Create and return chart with the provided config
-    return new Chart(ctx, chartConfig);
-  } catch (e) {
-    console.error(`Error creating ${chartType} chart:`, e);
-    container.innerHTML = `<div style="color: red; text-align: center; margin-top: 20px;">Error creating chart: ${e.message}</div>`;
-    return null;
-  }
+    }, 200); // Short delay to ensure the canvas is in the DOM
+  });
 }
 
 
@@ -167,34 +174,61 @@ export function initialize() {
   }, 1500);
   
   // Ensure all charts render properly
-setTimeout(() => {
+setTimeout(async () => {
   // Fix any existing charts in the conversation
   const chartContainers = document.querySelectorAll('.rektbot-visual');
   if (chartContainers.length > 0) {
     console.log(`Found ${chartContainers.length} chart containers to initialize`);
     
-    chartContainers.forEach((container, index) => {
+    for (const container of chartContainers) {
       const chartType = container.classList.contains('scenario-simulation') ? 'scenario' : 
-                       container.classList.contains('market-analysis-chart') ? 'prediction' : 
-                       'generic';
+                      container.classList.contains('market-analysis-chart') ? 'prediction' : 
+                      'generic';
       
       // Only reinitialize containers that don't have working charts
       const hasCanvas = container.querySelector('canvas');
       const hasErrorMsg = container.querySelector('div[style*="color: red"]');
       
       if (!hasCanvas || hasErrorMsg) {
-        console.log(`Reinitializing chart container ${index} (${chartType})`);
+        console.log(`Reinitializing chart container for ${chartType}`);
         
-        // Create a placeholder chart (will be replaced when user interacts again)
-        const placeholderDiv = document.createElement('div');
-        placeholderDiv.style.cssText = 'text-align: center; padding: 20px; color: #aaa; font-style: italic;';
-        placeholderDiv.textContent = 'Chart will appear when you interact with this message again';
-        
-        // Clear and add placeholder
-        container.innerHTML = '';
-        container.appendChild(placeholderDiv);
+        // Try to recreate charts based on container type
+        if (chartType === 'scenario' || chartType === 'prediction') {
+          try {
+            // Provide a basic placeholder chart
+            const defaultConfig = {
+              type: 'line',
+              data: {
+                labels: ['Day 0', 'Day 1', 'Day 2', 'Day 3', 'Day 4'],
+                datasets: [{
+                  label: 'Placeholder Data',
+                  data: [0, 10, 5, 15, 10],
+                  borderColor: '#f7931a',
+                  backgroundColor: 'rgba(247, 147, 26, 0.1)'
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false
+              }
+            };
+            
+            await createSafeChart(container, chartType, defaultConfig);
+          } catch (e) {
+            console.error(`Failed to create placeholder chart: ${e.message}`);
+            // Fallback to placeholder text
+            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #aaa; font-style: italic;">
+              Chart will appear when you interact with this message again
+            </div>`;
+          }
+        } else {
+          // Just use placeholder text for unknown chart types
+          container.innerHTML = `<div style="text-align: center; padding: 20px; color: #aaa; font-style: italic;">
+            Chart will appear when you interact with this message again
+          </div>`;
+        }
       }
-    });
+    }
   }
 }, 1000);
   initializeNlpSupport();
@@ -265,6 +299,47 @@ function initializeKnowledgeGraph() {
   console.log("Knowledge Graph initialized with current application state");
 }
 
+/**
+ * Handle donation request intent
+ * @param {string} message - User message
+ * @returns {Object} Response with text and visual
+ */
+function handleDonationRequest(message) {
+  const bitcoinAddress = "bc1pfjhf946lwtjvzkkl965tdva3unvpa2n8plspns4aaej3pr6fuypsrx6svs";
+  
+  // Create visual component
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  // Create donation card with QR code
+  visual.innerHTML = `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Support the Calendar of Rekt</div>
+      
+      <div style="background: rgba(247, 147, 26, 0.1); border: 1px solid var(--btc-orange); border-radius: 5px; padding: 12px; margin-bottom: 15px; word-break: break-all; font-family: monospace; font-size: 0.85rem;">
+        ${bitcoinAddress}
+      </div>
+      
+      <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+        <!-- Dynamically generate QR code using an API -->
+        <img 
+          src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(bitcoinAddress)}&size=150x150&color=F7931A" 
+          alt="Bitcoin Address QR Code" 
+          style="max-width: 150px; height: auto; border-radius: 5px;"
+        />
+      </div>
+      
+      <div style="font-size: 0.9rem; text-align: center; opacity: 0.8;">
+        Thank you for supporting independent Bitcoin market analysis!
+      </div>
+    </div>
+  `;
+  
+  const text = "Thanks for your interest in supporting our work! Here's the Bitcoin address where you can send donations:";
+  
+  return { text, visual };
+}
+
 function handleKnowledgeExplorer(message, sentiment, processedMessage) {
   // Create visual component
   const visual = document.createElement('div');
@@ -292,63 +367,60 @@ function handleKnowledgeExplorer(message, sentiment, processedMessage) {
         `).join('')}
       </div>
       
-      <div class="kg-entities" id="kg-entities">
+      <div class="kg-entities" id="kg-entities-container">
         <div class="kg-placeholder">Select a category to explore concepts</div>
       </div>
     </div>
   `;
   
-  // Better event handling with proper timing and fallback
-  const attachEventHandlers = () => {
-    const categories = visual.querySelectorAll('.kg-category');
-    const entitiesContainer = visual.querySelector('#kg-entities');
-    
-    if (!categories.length || !entitiesContainer) {
-      console.error('Knowledge graph elements not found');
-      return;
-    }
-    
-    categories.forEach(category => {
-      category.addEventListener('click', function() {
-        console.log('Category clicked:', this.dataset.category);
-        
-        // Update active state
-        categories.forEach(c => c.classList.remove('active'));
-        this.classList.add('active');
-        
-        // Get category type from data attribute
-        const categoryType = this.dataset.category;
-        
-        // Find entities for this category
-        const entities = findEntitiesByCategory(categoryType);
-        
-        // Display entities
-        displayEntities(entitiesContainer, entities);
+  const text = "Here's a knowledge explorer that shows the concepts and relationships in my understanding of Bitcoin markets. Click on a category to explore related concepts.";
+  
+  // Return both text and visual
+  const result = { text, visual };
+  
+  // IMPORTANT FIX: Use a MutationObserver to attach event listeners after the visual is added to the DOM
+  const observer = new MutationObserver((mutations, obs) => {
+    // Look for our visual element to be added to the DOM
+    if (document.querySelector('.kg-categories')) {
+      const categories = document.querySelectorAll('.kg-category');
+      const entitiesContainer = document.getElementById('kg-entities-container');
+      
+      if (!categories.length || !entitiesContainer) {
+        console.error('Knowledge graph elements not found even after DOM update');
+        return;
+      }
+      
+      categories.forEach(category => {
+        category.addEventListener('click', function() {
+          console.log('Category clicked:', this.dataset.category);
+          
+          // Update active state
+          categories.forEach(c => c.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Get category type from data attribute
+          const categoryType = this.dataset.category;
+          
+          // Find entities for this category
+          const entities = findEntitiesByCategory(categoryType);
+          
+          // Display entities
+          displayEntities(entitiesContainer, entities);
+        });
       });
-    });
-    
-    // Highlight first category to show it's clickable
-    if (categories.length > 0) {
-      categories[0].style.borderColor = 'var(--btc-orange)';
-      setTimeout(() => {
-        categories[0].style.borderColor = 'rgba(255, 255, 255, 0.1)';
-      }, 1000);
+      
+      // Disconnect once we've set up the event listeners
+      obs.disconnect();
     }
-  };
-
-  // Try attaching handlers immediately
-  attachEventHandlers();
+  });
   
-  // Also try with a longer delay as fallback 
-  setTimeout(attachEventHandlers, 500);
+  // Start observing the document
+  observer.observe(document.body, { childList: true, subtree: true });
   
-  return {
-    text: "Here's a knowledge explorer that shows the concepts and relationships in my understanding of Bitcoin markets. Click on a category to explore related concepts.",
-    visual
-  };
+  return result;
 }
 
-// Helper functions for knowledge explorer
+// Add these helper functions right below handleKnowledgeExplorer
 function findEntitiesByCategory(category) {
   console.log('Finding entities for category:', category);
   
@@ -357,6 +429,7 @@ function findEntitiesByCategory(category) {
     return [];
   }
   
+  // Filter entities by type based on category
   const result = Object.entries(knowledgeGraph.entities)
     .filter(([id, entity]) => {
       switch(category) {
@@ -413,6 +486,8 @@ function displayEntities(container, entities) {
 }
 
 
+
+
 /**
  * Initialize the Naive Bayes Classifier for intent and sentiment analysis
  */
@@ -442,6 +517,47 @@ function trainBotNBC(nbc) {
   nbc.highValueTokens.add("strategy");
   nbc.highValueTokens.add("recommendation");
   nbc.highValueTokens.add("advice");
+}
+
+
+function handleCheesecakeRequest(message, sentiment) {
+  const cheesecake = knowledgeGraph.getEntity('cheesecake');
+  
+  // Create visual component
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  visual.innerHTML = `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <h3 style="margin: 0; font-size: 1.1rem; color: var(--btc-orange);">${cheesecake.recipe.title}</h3>
+      
+      <div style="margin-top: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px; color: var(--btc-orange);">Ingredients:</div>
+        <ul style="margin: 0; padding-left: 20px;">
+          ${cheesecake.recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+        </ul>
+      </div>
+      
+      <div style="margin-top: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px; color: var(--btc-orange);">Instructions:</div>
+        <ol style="margin: 0; padding-left: 20px;">
+          ${cheesecake.recipe.instructions.map(step => `<li>${step}</li>`).join('')}
+        </ol>
+      </div>
+      
+      <div style="margin-top: 15px; font-style: italic; text-align: center;">
+        ${cheesecake.recipe.serving_instructions}
+      </div>
+      
+      <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; opacity: 0.7;">
+        Warning: Risk of market indigestion. Previous dessert performance does not guarantee future results.
+      </div>
+    </div>
+  `;
+  
+  const text = "I see you're trying to distract me from analyzing Bitcoin risk! While I'm programmed to help with crypto market analysis, I happen to have a special recipe that combines my expertise with your request:";
+  
+  return { text, visual };
 }
 
 /**
@@ -1356,6 +1472,7 @@ function createConceptVisual(conceptId, explanation) {
   
   return visual;
 }
+
 /**
  * Process a user message and generate a response
  * @param {string} message - User message text
@@ -1404,9 +1521,21 @@ function processUserMessage(message) {
     return;
   }
   
-  // Use the processed intent with higher confidence
+  // Use the processed intent with higher confidence but allow overrides
   let handler = handleGenericResponse;
-  const intent = processedMessage.intent;
+  let intent = processedMessage.intent; // Changed from const to let
+  let confidence = processedMessage.confidence; // Added confidence variable
+  
+  // Handle special cases where intents might be mixed
+  if (intent === 'metric_analysis' && 
+      (/\b(20\d\d|previous|past|before|last cycle|earlier|history)\b/i.test(message) ||
+       /\b(compare|comparison|similar|parallels)\b/i.test(message))) {
+    // Override to historical comparison if metrics are mentioned in historical context
+    console.log("Mixed intent detected: overriding metric_analysis with historical_comparison");
+    intent = 'historical_comparison';
+    confidence = 0.92;
+  }
+  
   botState.context.lastQuestionType = intent;
   
   // Map intent to handler
@@ -1431,6 +1560,12 @@ function processUserMessage(message) {
       break;
     case 'educational':
       handler = handleEducationalQuery;
+      break;
+    case 'donation_request':
+      handler = handleDonationRequest;
+      break;
+    case 'cheesecake_request':
+      handler = handleCheesecakeRequest;
       break;
     default:
       handler = handleGenericResponse;
@@ -1531,8 +1666,9 @@ function handleRiskAssessment(message, sentiment, processedMessage) {
   visual.appendChild(gaugeContainer);
   
   // Get current risk from application state
-  const currentMonth = new Date().getMonth() + 1;
-  const currentRisk = state.riskByMonth[timeframe][currentMonth];
+    const monthEntity = processedMessage.entities.month;
+    const currentMonth = monthEntity ? monthEntity.index + 1 : new Date().getMonth() + 1;
+    const currentRisk = state.riskByMonth[timeframe][currentMonth];
   const riskValue = typeof currentRisk === 'object' ? currentRisk.risk : currentRisk;
   const riskPercentage = (riskValue * 100).toFixed(1);
   
@@ -2425,9 +2561,10 @@ function handleMarketPrediction(message, sentiment, processedMessage) {
   chartContainer.className = 'market-analysis-chart';
   visual.appendChild(chartContainer);
   
-  // Get current risk levels for all months
-  const allMonthsRisk = state.riskByMonth[timeframe];
-  const currentMonth = new Date().getMonth() + 1;
+// Get current risk levels for all months
+const allMonthsRisk = state.riskByMonth[timeframe];
+const monthEntity = processedMessage.entities.month;
+const currentMonth = monthEntity ? monthEntity.index + 1 : new Date().getMonth() + 1;
   
   // Create chart data
   const chartData = {
@@ -2510,9 +2647,9 @@ function handleMarketPrediction(message, sentiment, processedMessage) {
   };
   
   // Create chart using our safe chart function with a delay
-  setTimeout(() => {
-    createSafeChart(chartContainer, 'market-prediction', chartConfig);
-  }, 100);
+setTimeout(async () => {
+  await createSafeChart(chartContainer, 'market-prediction', chartConfig);
+}, 200);
   
   // Add timeframe controls
   const controls = document.createElement('div');
@@ -2525,29 +2662,53 @@ function handleMarketPrediction(message, sentiment, processedMessage) {
   
   visual.appendChild(controls);
   
-  // Add event listeners for timeframe controls
-  setTimeout(() => {
-    const timeframeButtons = controls.querySelectorAll('button');
-    timeframeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const newTimeframe = parseInt(button.dataset.timeframe);
+// Add event listeners for timeframe controls
+setTimeout(() => {
+  const timeframeButtons = controls.querySelectorAll('button');
+  timeframeButtons.forEach(button => {
+    button.addEventListener('click', async () => {  // Added async here
+      const newTimeframe = parseInt(button.dataset.timeframe);
+      
+      // Update active state
+      timeframeButtons.forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      
+      // Generate new message for the selected timeframe
+      const newMessage = `predict risk for next ${newTimeframe} days`;
+      const newResponse = handleMarketPrediction(newMessage);
+      
+      // Replace the current visual with the new one
+      const parent = visual.parentNode;
+      if (parent && newResponse.visual) {
+        parent.replaceChild(newResponse.visual, visual);
         
-        // Update active state
-        timeframeButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
-        // Generate new message for the selected timeframe
-        const newMessage = `predict risk for next ${newTimeframe} days`;
-        const newResponse = handleMarketPrediction(newMessage);
-        
-        // Replace the current visual with the new one
-        const parent = visual.parentNode;
-        if (parent && newResponse.visual) {
-          parent.replaceChild(newResponse.visual, visual);
+        // Re-run chart creation
+        const chartContainers = newResponse.visual.querySelectorAll('.market-analysis-chart');
+        if (chartContainers.length > 0) {
+          // Wait a moment for DOM updates to complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          for (const container of chartContainers) {
+            // You'll need to recreate the chart config here
+            const chartConfig = {
+              type: 'line',
+              data: {
+                labels: newResponse.chartData?.labels || [],
+                datasets: newResponse.chartData?.datasets || []
+              },
+              options: newResponse.chartOptions || {
+                responsive: true,
+                maintainAspectRatio: false
+              }
+            };
+            
+            await createSafeChart(container, 'market-prediction', chartConfig);
+          }
         }
-      });
+      }
     });
-  }, 200);
+  });
+}, 200);
   
   // Add contextual insights section
   const insightsContainer = document.createElement('div');
@@ -2974,9 +3135,10 @@ function handleScenarioSimulation(message, sentiment, processedMessage) {
   };
   
   // Create chart using our safe chart function with a delay
-  setTimeout(() => {
-    createSafeChart(chartContainer, 'scenario', chartConfig);
-  }, 100);
+setTimeout(async () => {
+  await createSafeChart(chartContainer, 'scenario', chartConfig);
+}, 200);
+
   
   // Calculate risk change based on scenario
   // More sophisticated model using knowledge graph and metrics
@@ -3014,9 +3176,10 @@ function handleScenarioSimulation(message, sentiment, processedMessage) {
     riskAdjustment = baseRise * percentScaling * cycleImpact;
   }
   
-  // Calculate new risk values
-  const currentMonth = new Date().getMonth() + 1;
-  const currentRisk = state.riskByMonth[30][currentMonth];
+    // Calculate risk change based on scenario
+    const monthEntity = processedMessage.entities.month;
+    const currentMonth = monthEntity ? monthEntity.index + 1 : new Date().getMonth() + 1;
+    const currentRisk = state.riskByMonth[30][currentMonth];
   const currentRiskValue = typeof currentRisk === 'object' ? currentRisk.risk : currentRisk;
   const adjustedRisk = Math.max(0.05, Math.min(0.95, currentRiskValue + riskAdjustment));
   
@@ -3158,40 +3321,58 @@ function handleScenarioSimulation(message, sentiment, processedMessage) {
   
   visual.appendChild(controls);
   
-  // Add event listener for update button
-  setTimeout(() => {
-    const updateButton = visual.querySelector('#update-scenario');
-    if (updateButton) {
-      updateButton.addEventListener('click', () => {
-        const percentInput = visual.querySelector('#percent-input');
-        const directionSelect = visual.querySelector('#direction-select');
+ // Add event listener for update button
+setTimeout(() => {
+  const updateButton = visual.querySelector('#update-scenario');
+  if (updateButton) {
+    updateButton.addEventListener('click', async () => {  // Added async here
+      const percentInput = visual.querySelector('#percent-input');
+      const directionSelect = visual.querySelector('#direction-select');
+      
+      if (percentInput && directionSelect) {
+        const newPercent = parseInt(percentInput.value) || 20;
+        const newDirection = directionSelect.value === 'down';
         
-        if (percentInput && directionSelect) {
-          const newPercent = parseInt(percentInput.value) || 20;
-          const newDirection = directionSelect.value === 'down';
-          
-          // Generate a new scenario response
-          const newMessage = `what if bitcoin ${newDirection ? 'drops' : 'rises'} by ${newPercent}%`;
-          const processedMsg = {
-            entities: {
-              percentage: {
-                raw: newPercent
-              }
+        // Generate a new scenario response
+        const newMessage = `what if bitcoin ${newDirection ? 'drops' : 'rises'} by ${newPercent}%`;
+        const processedMsg = {
+          entities: {
+            percentage: {
+              raw: newPercent
             }
-          };
-          const newResponse = handleScenarioSimulation(newMessage, 0, processedMsg);
-          
-          // Replace the current visual with the new one
-          if (newResponse.visual) {
-            const parent = visual.parentNode;
-            if (parent) {
-              parent.replaceChild(newResponse.visual, visual);
+          }
+        };
+        const newResponse = handleScenarioSimulation(newMessage, 0, processedMsg);
+        
+        // Replace the current visual with the new one
+        if (newResponse.visual) {
+          const parent = visual.parentNode;
+          if (parent) {
+            parent.replaceChild(newResponse.visual, visual);
+            
+            // Re-run chart creation after DOM update
+            const chartContainers = newResponse.visual.querySelectorAll('.scenario-simulation');
+            if (chartContainers.length > 0) {
+              for (const container of chartContainers) {
+                // Wait a moment for DOM updates to complete
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Get current price from state
+                const currentPrice = state.bitcoinData[state.bitcoinData.length - 1].price;
+                
+                // Create chart config with proper parameters
+                const chartConfig = getScenarioChartConfig(currentPrice, newPercent, newDirection);
+                if (chartConfig) {
+                  await createSafeChart(container, 'scenario', chartConfig);
+                }
+              }
             }
           }
         }
-      });
-    }
-  }, 200);
+      }
+    });  // Fixed closing brace for event listener
+  }     // Fixed closing brace for if (updateButton)
+}, 200);
   
   // Generate text response using enhanced knowledge
   let text = `If Bitcoin ${direction} by ${percent}%, `;
@@ -3248,6 +3429,110 @@ function handleScenarioSimulation(message, sentiment, processedMessage) {
 }
 
 /**
+ * Get scenario chart configuration
+ * @param {number} currentPrice - Current BTC price
+ * @param {number} percent - Percentage change
+ * @param {boolean} isDown - Whether the scenario is a downward move
+ * @returns {Object} Chart configuration
+ */
+function getScenarioChartConfig(currentPrice, percent, isDown) {
+  const signedPercent = isDown ? -percent : percent;
+  
+  // Create scenario data (14 days)
+  const days = 14;
+  const labels = Array.from({length: days + 1}, (_, i) => `Day ${i}`);
+  const baselineData = Array(days + 1).fill(currentPrice);
+  
+  // Create scenario data with the specified change
+  const scenarioData = [...baselineData];
+  
+  // Apply scenario change with an exponential curve for more realism
+  for (let i = 1; i <= days; i++) {
+    // Exponential curve for faster change at beginning, slower at end
+    const changeRatio = 1 - Math.exp(-i / (days / 3));
+    scenarioData[i] = currentPrice * (1 + (signedPercent / 100) * changeRatio);
+  }
+  
+  // Add possible secondary move (for realism)
+  const secondaryData = [...scenarioData];
+  if (isDown) {
+    // For downward moves, add a relief bounce after the low
+    for (let i = Math.floor(days * 0.6); i <= days; i++) {
+      const bounceRatio = (i - Math.floor(days * 0.6)) / (days - Math.floor(days * 0.6));
+      const bouncePercent = Math.min(10, percent * 0.25); // Bounce up to 10% or 25% of the drop
+      secondaryData[i] = scenarioData[i] * (1 + (bouncePercent / 100) * bounceRatio);
+    }
+  } else {
+    // For upward moves, add a small pullback after the rise
+    for (let i = Math.floor(days * 0.7); i <= days; i++) {
+      const pullbackRatio = (i - Math.floor(days * 0.7)) / (days - Math.floor(days * 0.7));
+      const pullbackPercent = Math.min(7, percent * 0.2); // Pull back up to 7% or 20% of the rise
+      secondaryData[i] = scenarioData[i] * (1 - (pullbackPercent / 100) * pullbackRatio);
+    }
+  }
+  
+  return {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Current Trajectory',
+          data: baselineData,
+          borderColor: '#777777',
+          borderDash: [5, 5],
+          fill: false
+        },
+        {
+          label: `Primary ${isDown ? 'Crash' : 'Rally'} Scenario (${percent}%)`,
+          data: scenarioData,
+          borderColor: isDown ? '#ff3b30' : '#4bb543',
+          backgroundColor: 'rgba(0, 0, 0, 0)', // No fill for this line
+          borderWidth: 2,
+          fill: false
+        },
+        {
+          label: `${isDown ? 'Relief Bounce' : 'Pullback'} Scenario`,
+          data: secondaryData,
+          borderColor: isDown ? '#ff9500' : '#ffcc00',
+          backgroundColor: isDown ? 'rgba(255, 59, 48, 0.1)' : 'rgba(75, 181, 67, 0.1)',
+          borderWidth: 2,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        y: {
+          title: {
+            display: true,
+            text: 'Price (USD)'
+          },
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Handle historical comparison intent
+ * @param {string} message - User message
+ * @param {number} sentiment - Message sentiment
+ * @param {Object} processedMessage - Processed message with entities
+ * @returns {Object} Response with text and visual
+ */
+/**
  * Handle historical comparison intent
  * @param {string} message - User message
  * @param {number} sentiment - Message sentiment
@@ -3259,48 +3544,1321 @@ function handleHistoricalComparison(message, sentiment, processedMessage) {
   const visual = document.createElement('div');
   visual.className = 'rektbot-visual';
   
-  // Get current month
-  const currentMonth = new Date().getMonth() + 1;
+  // Extract specific time period references from message
+  const timeReferences = extractHistoricalTimeReferences(message);
   
-  // Get historical crashes for this month
-  const monthCrashes = state.historicalCrashes[currentMonth] || [];
+  // Get current metrics for comparison
+  const currentMetrics = state.latestOnChainMetrics || {};
+  const currentCyclePosition = currentMetrics.cyclePosition || 0.5;
+  const currentMVRV = currentMetrics.mvrv ? currentMetrics.mvrv.value : null;
+  const currentNVT = currentMetrics.nvt ? currentMetrics.nvt.value : null;
   
-  // Get metrics for current context
-  const metrics = state.latestOnChainMetrics || {};
-  const cyclePosition = metrics.cyclePosition || 0.5;
+// Get month from entities or use current month as fallback
+const monthEntity = processedMessage.entities.month;
+const currentMonth = monthEntity ? monthEntity.index + 1 : new Date().getMonth() + 1;
+const currentYear = new Date().getFullYear();
   
-  if (monthCrashes.length === 0) {
-    visual.innerHTML = `
-      <div style="padding: 15px; text-align: center; opacity: 0.7;">
-        No significant historical crashes recorded for ${monthNames[currentMonth - 1]}.
+  // Determine if user is asking about a specific metric comparison
+  const isMetricComparison = /\b(mvrv|nvt|metric|on-chain|indicator)\b/i.test(message);
+  const isCycleComparison = /\b(cycle|position|phase|stage)\b/i.test(message);
+  const isMarketStructureComparison = /\b(market structure|pattern|formation|setup)\b/i.test(message);
+  const isCrashComparison = /\b(crash|correction|drop|dump|fall|decline)\b/i.test(message);
+  
+  // Get historical data based on time references or similar cycle positions
+  let historicalData;
+  let comparisonTitle;
+  let specificPeriod = false;
+  
+  if (timeReferences.length > 0) {
+    // User mentioned specific time periods
+    historicalData = getHistoricalDataForPeriods(timeReferences);
+    comparisonTitle = `Comparison with ${timeReferences.map(t => t.display).join(' & ')}`;
+    specificPeriod = true;
+  } else if (isCycleComparison) {
+    // Compare to similar cycle positions
+    historicalData = getHistoricalDataByCyclePosition(currentCyclePosition);
+    comparisonTitle = `Similar Cycle Position Comparisons (${(currentCyclePosition * 100).toFixed(0)}%)`;
+  } else if (isMetricComparison) {
+    // Compare to similar metric readings
+    historicalData = getHistoricalDataBySimilarMetrics(currentMVRV, currentNVT);
+    comparisonTitle = `Similar On-Chain Metric Periods`;
+  } else if (isCrashComparison) {
+    // Compare to previous significant crashes
+    historicalData = getHistoricalCrashData();
+    comparisonTitle = `Previous Market Corrections & Crashes`;
+  } else if (isMarketStructureComparison) {
+    // Compare to similar market structures
+    historicalData = getHistoricalMarketStructures(currentCyclePosition, currentMVRV, currentNVT);
+    comparisonTitle = `Similar Market Structure Periods`;
+  } else {
+    // Default to general historical comparison
+    historicalData = getGeneralHistoricalComparisons();
+    comparisonTitle = `Historical Market Analogs`;
+  }
+  
+  // Create the visual content header
+  const headerSection = document.createElement('div');
+  headerSection.style.marginBottom = '15px';
+  headerSection.innerHTML = `
+    <h3 style="margin: 0; font-size: 1.1rem; color: var(--btc-orange);">${comparisonTitle}</h3>
+    <p style="margin-top: 5px; font-size: 0.9rem;">
+      Comparing current market conditions with historical periods
+    </p>
+  `;
+  visual.appendChild(headerSection);
+  
+  // Create comparison cards for each historical period
+  historicalData.slice(0, 3).forEach(period => {
+    const comparisonCard = createComparisonCard(period, currentMetrics);
+    visual.appendChild(comparisonCard);
+  });
+  
+  // Add current market context section
+  const contextSection = document.createElement('div');
+  contextSection.style.background = 'rgba(30, 30, 30, 0.7)';
+  contextSection.style.padding = '15px';
+  contextSection.style.borderRadius = '10px';
+  contextSection.style.marginTop = '15px';
+  
+  contextSection.innerHTML = `
+    <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Current Market Context:</div>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
+      ${currentMVRV ? `
+        <div style="flex: 1; min-width: 140px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">
+          <div style="font-weight: bold; font-size: 0.9rem;">MVRV Ratio</div>
+          <div style="font-size: 1.1rem; margin: 5px 0;">${currentMVRV.toFixed(2)}</div>
+          <div style="font-size: 0.8rem; opacity: 0.7;">${getMVRVAssessment(currentMVRV)}</div>
+        </div>
+      ` : ''}
+      
+      ${currentNVT ? `
+        <div style="flex: 1; min-width: 140px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">
+          <div style="font-weight: bold; font-size: 0.9rem;">NVT Ratio</div>
+          <div style="font-size: 1.1rem; margin: 5px 0;">${currentNVT.toFixed(2)}</div>
+          <div style="font-size: 0.8rem; opacity: 0.7;">${getNVTAssessment(currentNVT)}</div>
+        </div>
+      ` : ''}
+      
+      <div style="flex: 1; min-width: 140px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">
+        <div style="font-weight: bold; font-size: 0.9rem;">Cycle Position</div>
+        <div style="font-size: 1.1rem; margin: 5px 0;">${(currentCyclePosition * 100).toFixed(0)}%</div>
+        <div style="font-size: 0.8rem; opacity: 0.7;">${getCyclePositionDescription(currentCyclePosition)}</div>
+      </div>
+    </div>
+    
+    <div style="font-size: 0.9rem;">
+      ${getOverallComparisonAssessment(historicalData, currentMetrics, specificPeriod, timeReferences)}
+    </div>
+  `;
+  
+  visual.appendChild(contextSection);
+  
+  // Generate text response based on the comparison
+  const text = generateComparisonText(historicalData, currentMetrics, timeReferences, specificPeriod);
+  
+  return { text, visual };
+}
+
+/**
+ * Extract historical time references from message
+ * @param {string} message - User message
+ * @returns {Array} Array of time reference objects
+ */
+function extractHistoricalTimeReferences(message) {
+  const references = [];
+  
+  // Check for year mentions (2017, 2018, etc)
+  const yearRegex = /\b(20\d\d)\b/g;
+  let yearMatch;
+  while ((yearMatch = yearRegex.exec(message)) !== null) {
+    const year = parseInt(yearMatch[1]);
+    
+    // Check for month mentions near the year
+    const monthRegex = /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i;
+    const contextBefore = message.substring(Math.max(0, yearMatch.index - 20), yearMatch.index);
+    const contextAfter = message.substring(yearMatch.index + yearMatch[0].length, Math.min(message.length, yearMatch.index + yearMatch[0].length + 20));
+    
+    let monthMatch = monthRegex.exec(contextBefore + " " + contextAfter);
+    let month = null;
+    
+    if (monthMatch) {
+      const monthName = monthMatch[1].toLowerCase();
+      const monthMap = {
+        'january': 1, 'february': 2, 'march': 3, 'april': 4,
+        'may': 5, 'june': 6, 'july': 7, 'august': 8,
+        'september': 9, 'october': 10, 'november': 11, 'december': 12
+      };
+      month = monthMap[monthName];
+    }
+    
+    // Check for "early", "mid", "late" qualifiers
+    let timeQualifier = null;
+    const qualifierRegex = /\b(early|mid|late)\b/i;
+    const qualifierMatch = qualifierRegex.exec(contextBefore + " " + contextAfter);
+    
+    if (qualifierMatch) {
+      timeQualifier = qualifierMatch[1].toLowerCase();
+    }
+    
+    // Check for events like "top", "bottom", "crash", etc.
+    let event = null;
+    const eventRegex = /\b(top|bottom|peak|crash|correction|bull|bear)\b/i;
+    const eventMatch = eventRegex.exec(contextBefore + " " + contextAfter);
+    
+    if (eventMatch) {
+      event = eventMatch[1].toLowerCase();
+    }
+    
+    // Format display text
+    let display = `${year}`;
+    if (month) {
+      display = `${monthNames[month - 1]} ${year}`;
+    }
+    if (timeQualifier) {
+      display = `${timeQualifier} ${display}`;
+    }
+    if (event) {
+      display = `${display} ${event}`;
+    }
+    
+    references.push({
+      year,
+      month,
+      timeQualifier,
+      event,
+      display
+    });
+  }
+  
+  // Check for references to previous cycles or events without specific years
+  const cycleRegex = /\b(previous|last|prior) (cycle|bull market|bear market|halving|correction|crash)\b/i;
+  let cycleMatch;
+  
+  while ((cycleMatch = cycleRegex.exec(message)) !== null) {
+    const cycleType = cycleMatch[2].toLowerCase();
+    
+    references.push({
+      cycleType,
+      isRelative: true,
+      display: `${cycleMatch[1]} ${cycleMatch[2]}`
+    });
+  }
+  
+  return references;
+}
+
+/**
+ * Get historical data for specific time periods
+ * @param {Array} timeReferences - Array of time reference objects
+ * @returns {Array} Historical data for the time periods
+ */
+function getHistoricalDataForPeriods(timeReferences) {
+  const historicalData = [];
+  
+  // Process each time reference
+  timeReferences.forEach(ref => {
+    if (ref.year === 2017 && (ref.month === 12 || ref.event === 'top')) {
+      // December 2017 bull market top
+      historicalData.push({
+        period: 'December 2017 (Cycle Top)',
+        date: '2017-12-17',
+        metrics: {
+          mvrv: 3.8,
+          nvt: 68.5,
+          cyclePosition: 0.95
+        },
+        marketConditions: "Extreme euphoria, parabolic price rise, mainstream media attention",
+        subsequentMovement: "Led to an 84% correction over the following year",
+        similarity: 0.62,
+        keyInsights: [
+          "Extreme retail FOMO",
+          "Significant exchange overload",
+          "All-time high Google search interest",
+          "MVRV ratio at historical extreme"
+        ]
+      });
+    } else if (ref.year === 2018 && (ref.month === 12 || ref.event === 'bottom')) {
+      // December 2018 bear market bottom
+      historicalData.push({
+        period: 'December 2018 (Bear Market Bottom)',
+        date: '2018-12-15',
+        metrics: {
+          mvrv: 0.7,
+          nvt: 27.8,
+          cyclePosition: 0.05
+        },
+        marketConditions: "Extreme pessimism, capitulation, low trading volume",
+        subsequentMovement: "Began a new bull cycle with over 1,600% appreciation over the next 2 years",
+        similarity: 0.35,
+        keyInsights: [
+          "Highly profitable miners capitulated",
+          "Median holding was at a loss",
+          "Media declared 'crypto is dead'",
+          "Strong accumulation by long-term holders"
+        ]
+      });
+    } else if (ref.year === 2021 && ref.month === 4) {
+      // April 2021 local top
+      historicalData.push({
+        period: 'April 2021 (Local Top)',
+        date: '2021-04-14',
+        metrics: {
+          mvrv: 4.72,
+          nvt: 62.1,
+          cyclePosition: 0.82
+        },
+        marketConditions: "Strong bullish momentum, institutional adoption, high leverage",
+        subsequentMovement: "30% correction followed by consolidation and another rally to a higher high",
+        similarity: 0.55,
+        keyInsights: [
+          "Coinbase IPO marked local top",
+          "Extremely high funding rates",
+          "Historically high MVRV (>4.5)",
+          "Mining hash rate concerns emerged"
+        ]
+      });
+    } else if (ref.year === 2021 && ref.month === 11) {
+      // November 2021 all-time high
+      historicalData.push({
+        period: 'November 2021 (All-Time High)',
+        date: '2021-11-10',
+        metrics: {
+          mvrv: 3.95,
+          nvt: 73.2,
+          cyclePosition: 0.98
+        },
+        marketConditions: "New all-time high, NFT mania, widespread altcoin speculation",
+        subsequentMovement: "Began a prolonged bear market with multiple capitulation events",
+        similarity: 0.68,
+        keyInsights: [
+          "Extreme leverage in derivatives markets",
+          "Influx of new retail participants",
+          "On-chain metrics showing divergence from price",
+          "Early warning signs in funding rates"
+        ]
+      });
+    } else if (ref.year === 2022 && ref.month === 11) {
+      // November 2022 FTX collapse
+      historicalData.push({
+        period: 'November 2022 (FTX Collapse)',
+        date: '2022-11-08',
+        metrics: {
+          mvrv: 1.02,
+          nvt: 32.5,
+          cyclePosition: 0.15
+        },
+        marketConditions: "Bear market, exchange contagion, liquidity crisis",
+        subsequentMovement: "Final capitulation event before beginning of recovery in early 2023",
+        similarity: 0.25,
+        keyInsights: [
+          "Exchange insolvency driven crash",
+          "Forced seller dynamics",
+          "Institutional trust erosion",
+          "On-chain metrics near bottom formation levels"
+        ]
+      });
+    } else if (ref.year === 2020 && ref.month === 3) {
+      // March 2020 COVID crash
+      historicalData.push({
+        period: 'March 2020 (COVID Crash)',
+        date: '2020-03-12',
+        metrics: {
+          mvrv: 0.95,
+          nvt: 25.7,
+          cyclePosition: 0.1
+        },
+        marketConditions: "Global market panic, liquidity crisis, correlation with traditional markets",
+        subsequentMovement: "V-shaped recovery followed by a 1,500% bull run over the next year",
+        similarity: 0.30,
+        keyInsights: [
+          "Macro-driven liquidation cascade",
+          "High exchange withdrawal following crash",
+          "Strong accumulation by long-term holders",
+          "Halving event approaching after crash"
+        ]
+      });
+    } else if (ref.isRelative && ref.cycleType.includes('cycle')) {
+      // Previous cycle comparison
+      historicalData.push({
+        period: 'Previous Cycle Peak (2017-2018)',
+        date: '2017-12-17 to 2018-12-15',
+        metrics: {
+          mvrv: {
+            peak: 3.8,
+            trough: 0.7
+          },
+          nvt: {
+            peak: 68.5,
+            trough: 27.8
+          },
+          cycleLength: "364 days from peak to trough"
+        },
+        marketConditions: "Full cycle from euphoria to despair, retail-driven bubble",
+        subsequentMovement: "Extended accumulation phase followed by institutional-led bull market",
+        similarity: 0.50,
+        keyInsights: [
+          "84% drawdown from peak to trough",
+          "Retail-driven bubble with limited institutional involvement",
+          "Clear MVRV and NVT pattern with consistent peaks",
+          "Hash rate continued to grow despite price decline"
+        ]
+      });
+      
+      // Add current cycle data too
+      historicalData.push({
+        period: 'Current Cycle (2021-Present)',
+        date: '2021-11-10 to Present',
+        metrics: {
+          mvrv: {
+            peak: 3.95,
+            current: state.latestOnChainMetrics?.mvrv?.value || 2.5
+          },
+          nvt: {
+            peak: 73.2,
+            current: state.latestOnChainMetrics?.nvt?.value || 45.0
+          },
+          daysFromPeak: daysBetween('2021-11-10', new Date().toISOString().split('T')[0])
+        },
+        marketConditions: "Institutional-driven cycle, macro correlation, higher liquidity",
+        subsequentMovement: "Ongoing",
+        similarity: 1.0,
+        keyInsights: [
+          "Higher base building after each selloff",
+          "Stronger institutional component than previous cycles",
+          "On-chain metrics showing resilience",
+          "Increased stablecoin liquidity compared to previous cycle"
+        ]
+      });
+    }
+  });
+  
+  // If no specific matches were found, provide generic historical data
+  if (historicalData.length === 0) {
+    const defaultPeriods = [
+      {
+        period: 'December 2017 Bull Market Top',
+        date: '2017-12-17',
+        metrics: {
+          mvrv: 3.8,
+          nvt: 68.5,
+          cyclePosition: 0.95
+        },
+        marketConditions: "Retail-driven euphoria, parabolic price action",
+        subsequentMovement: "84% correction over the following year",
+        similarity: 0.45,
+        keyInsights: [
+          "Extreme retail FOMO",
+          "Significant exchange overload",
+          "All-time high Google search interest",
+          "MVRV ratio at historical extreme"
+        ]
+      },
+      {
+        period: 'April 2021 Local Top',
+        date: '2021-04-14',
+        metrics: {
+          mvrv: 4.72,
+          nvt: 62.1,
+          cyclePosition: 0.82
+        },
+        marketConditions: "Mid-cycle top with institutional adoption",
+        subsequentMovement: "55% correction followed by recovery to new ATH",
+        similarity: 0.62,
+        keyInsights: [
+          "Coinbase IPO marked the local top",
+          "Extremely high funding rates",
+          "Historically high MVRV (>4.5)",
+          "Mining hash rate concerns emerged"
+        ]
+      },
+      {
+        period: 'November 2021 All-Time High',
+        date: '2021-11-10',
+        metrics: {
+          mvrv: 3.95,
+          nvt: 73.2,
+          cyclePosition: 0.98
+        },
+        marketConditions: "Cycle peak with broad market speculation",
+        subsequentMovement: "Prolonged bear market with multiple capitulation events",
+        similarity: 0.58,
+        keyInsights: [
+          "Extreme leverage in derivatives markets",
+          "Influx of new retail participants",
+          "On-chain metrics showing divergence from price",
+          "Early warning signs in funding rates"
+        ]
+      }
+    ];
+    
+    historicalData.push(...defaultPeriods);
+  }
+  
+  return historicalData;
+}
+
+/**
+ * Get historical data based on similar cycle position
+ * @param {number} currentCyclePosition - Current cycle position
+ * @returns {Array} Historical data with similar cycle positions
+ */
+function getHistoricalDataByCyclePosition(currentCyclePosition) {
+  // Define cycle position ranges
+  const earlyBull = { min: 0.2, max: 0.4 };
+  const midCycle = { min: 0.4, max: 0.6 };
+  const lateBull = { min: 0.6, max: 0.8 };
+  const marketTop = { min: 0.8, max: 1.0 };
+  const bearMarket = { min: 0.0, max: 0.2 };
+  
+  const historicalData = [];
+  
+  if (currentCyclePosition >= lateBull.min && currentCyclePosition <= lateBull.max) {
+    // Late bull market comparison
+    historicalData.push({
+      period: 'October-November 2017',
+      date: '2017-10-15',
+      metrics: {
+        mvrv: 2.9,
+        nvt: 55.6,
+        cyclePosition: 0.72
+      },
+      marketConditions: "Late bull market before final parabolic phase",
+      subsequentMovement: "Continued 3x rise over 2 months before peak, then 84% crash",
+      similarity: 0.85,
+      keyInsights: [
+        "Accelerating positive sentiment",
+        "Increasing new address growth",
+        "Rising media attention",
+        "Growing retail participation"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'February-March 2021',
+      date: '2021-02-20',
+      metrics: {
+        mvrv: 3.2,
+        nvt: 57.3,
+        cyclePosition: 0.68
+      },
+      marketConditions: "Late bull market with institutional adoption",
+      subsequentMovement: "Further 50% rise before local top in April, 55% correction thereafter",
+      similarity: 0.78,
+      keyInsights: [
+        "Institutional accumulation",
+        "Bitcoin corporate treasury adoption",
+        "Positive regulatory developments",
+        "Rising open interest in derivatives"
+      ]
+    });
+  } else if (currentCyclePosition >= midCycle.min && currentCyclePosition <= midCycle.max) {
+    // Mid cycle comparison
+    historicalData.push({
+      period: 'July-August 2017',
+      date: '2017-07-15',
+      metrics: {
+        mvrv: 2.1,
+        nvt: 42.7,
+        cyclePosition: 0.52
+      },
+      marketConditions: "Mid-cycle consolidation after first major impulse",
+      subsequentMovement: "Continued uptrend with 320% rise to cycle peak in December",
+      similarity: 0.72,
+      keyInsights: [
+        "Consolidation after initial rally",
+        "Growing mainstream awareness",
+        "Healthy on-chain metrics",
+        "Expanding exchange ecosystem"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'September 2020',
+      date: '2020-09-15',
+      metrics: {
+        mvrv: 1.8,
+        nvt: 38.9,
+        cyclePosition: 0.45
+      },
+      marketConditions: "Early bull market consolidation phase",
+      subsequentMovement: "Accelerated uptrend with 650% rise to April 2021 local top",
+      similarity: 0.68,
+      keyInsights: [
+        "DeFi summer cooling off",
+        "Institutional interest growing",
+        "Healthy accumulation by long-term holders",
+        "On-chain metrics showing strength"
+      ]
+    });
+  } else if (currentCyclePosition >= marketTop.min && currentCyclePosition <= marketTop.max) {
+    // Market top comparison
+    historicalData.push({
+      period: 'December 2017',
+      date: '2017-12-17',
+      metrics: {
+        mvrv: 3.8,
+        nvt: 68.5,
+        cyclePosition: 0.95
+      },
+      marketConditions: "Blow-off top with extreme retail euphoria",
+      subsequentMovement: "84% decline over the next year into bear market",
+      similarity: 0.70,
+      keyInsights: [
+        "Parabolic price action",
+        "Mainstream media frenzy",
+        "Exchange sign-up overloads",
+        "Extreme on-chain divergences"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'November 2021',
+      date: '2021-11-10',
+      metrics: {
+        mvrv: 3.95,
+        nvt: 73.2,
+        cyclePosition: 0.98
+      },
+      marketConditions: "Cycle top with both retail and institutional involvement",
+      subsequentMovement: "Prolonged bear market with ~75% decline",
+      similarity: 0.65,
+      keyInsights: [
+        "All-time high leverage",
+        "NFT and altcoin mania",
+        "Bearish divergences in on-chain metrics",
+        "Signs of exhaustion in funding rates"
+      ]
+    });
+  }
+  
+  return historicalData;
+}
+
+/**
+ * Get historical data based on similar metrics
+ * @param {number} currentMVRV - Current MVRV value
+ * @param {number} currentNVT - Current NVT value
+ * @returns {Array} Historical data with similar metrics
+ */
+function getHistoricalDataBySimilarMetrics(currentMVRV, currentNVT) {
+  const historicalData = [];
+  
+  // No current metrics available, provide default data
+  if (currentMVRV === null && currentNVT === null) {
+    return getGeneralHistoricalComparisons();
+  }
+  
+  if (currentMVRV > 3.0) {
+    // High MVRV comparison
+    historicalData.push({
+      period: 'December 2017',
+      date: '2017-12-10',
+      metrics: {
+        mvrv: 3.7,
+        nvt: 65.8,
+        cyclePosition: 0.92
+      },
+      marketConditions: "Late-stage bull market with extreme valuation",
+      subsequentMovement: "Near-term peak followed by 84% decline",
+      similarity: 0.88,
+      keyInsights: [
+        "Top signal for the 2017 cycle",
+        "Historically reliable indicator of overvaluation",
+        "Retail-driven market frenzy",
+        "Extreme divergence between price and fundamentals"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'April 2021',
+      date: '2021-04-10',
+      metrics: {
+        mvrv: 4.5,
+        nvt: 60.2,
+        cyclePosition: 0.80
+      },
+      marketConditions: "Mid-cycle top with overextended valuations",
+      subsequentMovement: "55% correction before continuation of bull market",
+      similarity: 0.82,
+      keyInsights: [
+        "Local top signal for 2021 cycle",
+        "Leverage-driven price action",
+        "Mixed institutional signals",
+        "On-chain warning signals across multiple metrics"
+      ]
+    });
+  } else if (currentMVRV > 1.5 && currentMVRV < 3.0) {
+    // Moderate MVRV comparison
+    historicalData.push({
+      period: 'August 2017',
+      date: '2017-08-15',
+      metrics: {
+        mvrv: 2.2,
+        nvt: 45.3,
+        cyclePosition: 0.58
+      },
+      marketConditions: "Mid-cycle bull market with reasonable valuations",
+      subsequentMovement: "Continued 4-month rally of +270% before significant correction",
+      similarity: 0.85,
+      keyInsights: [
+        "Mid-cycle consolidation phase",
+        "Healthy price structure",
+        "Balanced on-chain metrics",
+        "Growing market awareness"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'February 2021',
+      date: '2021-02-15',
+      metrics: {
+        mvrv: 2.8,
+        nvt: 52.7,
+        cyclePosition: 0.65
+      },
+      marketConditions: "Strong bull trend with institutional adoption",
+      subsequentMovement: "Continued uptrend for 2 months before local top",
+      similarity: 0.80,
+      keyInsights: [
+        "Institutional investment phase",
+        "Corporate treasury adoption",
+        "Strong spot buying",
+        "Healthy on-chain metrics"
+      ]
+    });
+  } else if (currentMVRV < 1.0) {
+    // Low MVRV comparison
+    historicalData.push({
+      period: 'December 2018',
+      date: '2018-12-15',
+      metrics: {
+        mvrv: 0.7,
+        nvt: 27.8,
+        cyclePosition: 0.05
+      },
+      marketConditions: "Bear market bottom with extreme undervaluation",
+      subsequentMovement: "Slow recovery with +330% over the next year",
+      similarity: 0.78,
+      keyInsights: [
+        "Historically strong buy signal",
+        "Capitulation phase complete",
+        "Strong accumulation by smart money",
+        "Value area based on realized price"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'March 2020',
+      date: '2020-03-15',
+      metrics: {
+        mvrv: 0.85,
+        nvt: 25.6,
+        cyclePosition: 0.1
+      },
+      marketConditions: "COVID crash bottom with flash undervaluation",
+      subsequentMovement: "Strong V-shaped recovery and beginning of bull market",
+      similarity: 0.75,
+      keyInsights: [
+        "Macro-driven panic selling",
+        "Strong value signal for long-term holders",
+        "Beginning of accumulation phase",
+        "Halving event provided additional catalyst"
+      ]
+    });
+  }
+  
+  if (currentNVT > 60) {
+    // High NVT comparison (if not already added)
+    const alreadyHasHighNVT = historicalData.some(data => data.metrics.nvt > 60);
+    
+    if (!alreadyHasHighNVT) {
+      historicalData.push({
+        period: 'January 2018',
+        date: '2018-01-05',
+        metrics: {
+          mvrv: 3.5,
+          nvt: 69.3,
+          cyclePosition: 0.9
+        },
+        marketConditions: "Post-peak euphoria with declining network utility",
+        subsequentMovement: "Continued downtrend with multiple failed rallies",
+        similarity: 0.72,
+        keyInsights: [
+          "Overvaluation relative to network utility",
+          "Transaction activity declining",
+          "Waning momentum",
+          "Early bear market conditions forming"
+        ]
+      });
+    }
+  }
+  
+  return historicalData;
+}
+
+/**
+ * Get historical market structure data
+ * @param {number} cyclePosition - Current cycle position
+ * @param {number} mvrv - Current MVRV
+ * @param {number} nvt - Current NVT
+ * @returns {Array} Historical data with similar market structures
+ */
+function getHistoricalMarketStructures(cyclePosition, mvrv, nvt) {
+  const historicalData = [];
+  
+  if (cyclePosition > 0.6 && cyclePosition < 0.8) {
+    // Late bull market structure
+    historicalData.push({
+      period: 'October-November 2017',
+      date: '2017-11-01',
+      metrics: {
+        mvrv: 3.1,
+        nvt: 58.2,
+        cyclePosition: 0.75
+      },
+      marketConditions: "Late bull market before final parabolic phase",
+      subsequentMovement: "+130% in final melt-up, then 84% crash",
+      similarity: 0.82,
+      keyInsights: [
+        "Building momentum before final push",
+        "Increasing retail participation",
+        "Rising media attention",
+        "Technical resistance breakouts"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'March 2021',
+      date: '2021-03-15',
+      metrics: {
+        mvrv: 3.5,
+        nvt: 59.7,
+        cyclePosition: 0.72
+      },
+      marketConditions: "Late bull phase before local top",
+      subsequentMovement: "+15% to local top, then 55% correction, then recovery to new ATH",
+      similarity: 0.78,
+      keyInsights: [
+        "Institutional and corporate adoption",
+        "Rising leverage in derivatives markets",
+        "Strong technical momentum",
+        "On-chain divergences beginning to show"
+      ]
+    });
+  } else if (cyclePosition > 0.3 && cyclePosition < 0.6) {
+    // Mid-cycle structure
+    historicalData.push({
+      period: 'July-August 2017',
+      date: '2017-07-20',
+      metrics: {
+        mvrv: 2.3,
+        nvt: 43.2,
+        cyclePosition: 0.55
+      },
+      marketConditions: "Mid-cycle consolidation phase",
+      subsequentMovement: "+320% rise to cycle peak in Dec 2017",
+      similarity: 0.75,
+      keyInsights: [
+        "Healthy uptrend following initial rally",
+        "Growing market awareness",
+        "Balanced on-chain metrics",
+        "Technical pattern of higher lows"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'October 2020',
+      date: '2020-10-20',
+      metrics: {
+        mvrv: 1.9,
+        nvt: 42.1,
+        cyclePosition: 0.48
+      },
+      marketConditions: "Early-to-mid bull market phase",
+      subsequentMovement: "+400% to April 2021 local top",
+      similarity: 0.70,
+      keyInsights: [
+        "Institutional adoption beginning",
+        "Healthy accumulation patterns",
+        "Solid on-chain fundamentals",
+        "Technical breakout from consolidation"
+      ]
+    });
+  } else if (cyclePosition > 0.8) {
+    // Market top structure
+    historicalData.push({
+      period: 'December 2017',
+      date: '2017-12-17',
+      metrics: {
+        mvrv: 3.8,
+        nvt: 68.5,
+        cyclePosition: 0.95
+      },
+      marketConditions: "Market top with parabolic rise",
+      subsequentMovement: "84% crash over the following 12 months",
+      similarity: 0.60,
+      keyInsights: [
+        "Parabolic price action",
+        "Extreme retail euphoria",
+        "Media frenzy",
+        "Multiple on-chain warning signals"
+      ]
+    });
+    
+    historicalData.push({
+      period: 'November 2021',
+      date: '2021-11-10',
+      metrics: {
+        mvrv: 3.95,
+        nvt: 73.2,
+        cyclePosition: 0.98
+      },
+      marketConditions: "Cycle peak with both retail and institutional involvement",
+      subsequentMovement: "75% decline in prolonged bear market",
+      similarity: 0.65,
+      keyInsights: [
+        "Extreme leverage",
+        "Altcoin and NFT mania",
+        "On-chain bearish divergences",
+        "Exhaustion in momentum indicators"
+      ]
+    });
+  }
+  
+  return historicalData;
+}
+
+/**
+ * Get historical crash data
+ * @returns {Array} Historical crash data
+ */
+function getHistoricalCrashData() {
+  return [
+    {
+      period: 'December 2017 - December 2018',
+      date: '2017-12-17 to 2018-12-15',
+      metrics: {
+        mvrv: {
+          before: 3.8,
+          after: 0.7
+        },
+        nvt: {
+          before: 68.5,
+          after: 27.8
+        },
+        cyclePosition: {
+          before: 0.95,
+          after: 0.05
+        }
+      },
+      marketConditions: "Bubble burst after retail-driven mania",
+      decline: "84% over 365 days",
+      similarity: 0.55,
+      keyInsights: [
+        "Largest percentage drawdown in 2017-2018 cycle",
+        "Initial 70% drop in first 60 days",
+        "Several relief rallies that ultimately failed",
+        "Final capitulation in November 2018"
+      ]
+    },
+    {
+      period: 'March 2020 COVID Crash',
+      date: '2020-03-12 to 2020-03-13',
+      metrics: {
+        mvrv: {
+          before: 1.3,
+          after: 0.85
+        },
+        nvt: {
+          before: 32.5,
+          after: 25.6
+        },
+        cyclePosition: {
+          before: 0.25,
+          after: 0.1
+        }
+      },
+      marketConditions: "Global pandemic panic, liquidity crisis in all markets",
+      decline: "50% in 24 hours",
+      similarity: 0.40,
+      keyInsights: [
+        "Fastest significant crash in Bitcoin history",
+        "Correlation with traditional markets spike",
+        "Massive liquidation cascade in derivatives",
+        "V-shaped recovery began almost immediately"
+      ]
+    },
+    {
+      period: 'May 2021 Correction',
+      date: '2021-05-12 to 2021-07-20',
+      metrics: {
+        mvrv: {
+          before: 3.2,
+          after: 1.5
+        },
+        nvt: {
+          before: 57.3,
+          after: 38.1
+        },
+        cyclePosition: {
+          before: 0.75,
+          after: 0.45
+        }
+      },
+      marketConditions: "Mid-cycle correction triggered by China mining ban",
+      decline: "55% over 70 days",
+      similarity: 0.65,
+      keyInsights: [
+        "Environmental concerns sparked selling",
+        "China mining ban caused hash rate collapse",
+        "Multiple technical supports broken",
+        "Significant deleveraging event"
+      ]
+    }
+  ];
+}
+
+/**
+ * Get general historical comparisons
+ * @returns {Array} General historical comparison data
+ */
+function getGeneralHistoricalComparisons() {
+  return [
+    {
+      period: 'October-November 2017',
+      date: '2017-10-20',
+      metrics: {
+        mvrv: 2.9,
+        nvt: 55.6,
+        cyclePosition: 0.72
+      },
+      marketConditions: "Late-stage bull market before final parabolic phase",
+      subsequentMovement: "+130% to top, then 84% crash",
+      similarity: 0.70,
+      keyInsights: [
+        "Accelerating uptrend",
+        "Growing retail awareness",
+        "Strong momentum",
+        "Elevated but not extreme valuations"
+      ]
+    },
+    {
+      period: 'March 2021',
+      date: '2021-03-15',
+      metrics: {
+        mvrv: 3.5,
+        nvt: 59.7,
+        cyclePosition: 0.72
+      },
+      marketConditions: "Mid-cycle bull market with institutional adoption",
+      subsequentMovement: "+15% to local top, then 55% correction",
+      similarity: 0.75,
+      keyInsights: [
+        "Institutional accumulation",
+        "Strong technical structure",
+        "Healthy on-chain fundamentals",
+        "Multiple expansion phase"
+      ]
+    },
+    {
+      period: 'August-September 2021',
+      date: '2021-09-05',
+      metrics: {
+        mvrv: 2.7,
+        nvt: 52.1,
+        cyclePosition: 0.65
+      },
+      marketConditions: "Recovery from mid-cycle correction",
+      subsequentMovement: "+75% to new ATH in November",
+      similarity: 0.65,
+      keyInsights: [
+        "Post-correction recovery phase",
+        "Miner relocation mostly complete",
+        "Renewed institutional interest",
+        "Balanced on-chain metrics"
+      ]
+    }
+  ];
+}
+
+/**
+ * Create a visual comparison card
+ * @param {Object} period - Historical period data
+ * @param {Object} currentMetrics - Current metrics
+ * @returns {HTMLElement} Comparison card
+ */
+function createComparisonCard(period, currentMetrics) {
+  const card = document.createElement('div');
+  card.style.background = 'rgba(30, 30, 30, 0.6)';
+  card.style.padding = '15px';
+  card.style.borderRadius = '8px';
+  card.style.marginBottom = '10px';
+  
+  let metricsHTML = '';
+  
+  // Format metrics display based on data structure
+  if (period.metrics.mvrv !== undefined) {
+    if (typeof period.metrics.mvrv === 'object') {
+      // Handle range of values (for cycles)
+      const mvrvText = period.metrics.mvrv.peak ? 
+        `Peak: ${period.metrics.mvrv.peak.toFixed(2)}` : 
+        period.metrics.mvrv.before ? 
+          `Before: ${period.metrics.mvrv.before.toFixed(2)}, After: ${period.metrics.mvrv.after.toFixed(2)}` :
+          `${period.metrics.mvrv.current?.toFixed(2) || 'N/A'}`;
+      
+      metricsHTML += `
+        <div><b>MVRV:</b> ${mvrvText}</div>
+      `;
+    } else {
+      metricsHTML += `
+        <div><b>MVRV:</b> ${period.metrics.mvrv.toFixed(2)}</div>
+      `;
+    }
+  }
+  
+  if (period.metrics.nvt !== undefined) {
+    if (typeof period.metrics.nvt === 'object') {
+      // Handle range of values
+      const nvtText = period.metrics.nvt.peak ? 
+        `Peak: ${period.metrics.nvt.peak.toFixed(2)}` : 
+        period.metrics.nvt.before ? 
+          `Before: ${period.metrics.nvt.before.toFixed(2)}, After: ${period.metrics.nvt.after.toFixed(2)}` :
+          `${period.metrics.nvt.current?.toFixed(2) || 'N/A'}`;
+      
+      metricsHTML += `
+        <div><b>NVT:</b> ${nvtText}</div>
+      `;
+    } else {
+      metricsHTML += `
+        <div><b>NVT:</b> ${period.metrics.nvt.toFixed(2)}</div>
+      `;
+    }
+  }
+  
+  if (period.metrics.cyclePosition !== undefined) {
+    if (typeof period.metrics.cyclePosition === 'object') {
+      // Handle range of values
+      const posText = period.metrics.cyclePosition.before ? 
+        `Before: ${(period.metrics.cyclePosition.before * 100).toFixed(0)}%, After: ${(period.metrics.cyclePosition.after * 100).toFixed(0)}%` :
+        `${(period.metrics.cyclePosition.current * 100)?.toFixed(0) || 'N/A'}%`;
+      
+      metricsHTML += `
+        <div><b>Cycle:</b> ${posText}</div>
+      `;
+    } else {
+      metricsHTML += `
+        <div><b>Cycle:</b> ${(period.metrics.cyclePosition * 100).toFixed(0)}%</div>
+      `;
+    }
+  }
+  
+  if (period.metrics.cycleLength) {
+    metricsHTML += `
+      <div><b>Cycle Length:</b> ${period.metrics.cycleLength}</div>
+    `;
+  }
+  
+  if (period.metrics.daysFromPeak) {
+    metricsHTML += `
+      <div><b>Days Since Peak:</b> ${period.metrics.daysFromPeak}</div>
+    `;
+  }
+  
+  // Create insights list
+  let insightsHTML = '';
+  if (period.keyInsights && period.keyInsights.length > 0) {
+    insightsHTML = `
+      <div style="margin-top: 8px;">
+        <div style="font-size: 0.9rem; margin-bottom: 3px;"><b>Key Insights:</b></div>
+        <ul style="margin: 0; padding-left: 18px; font-size: 0.85rem;">
+          ${period.keyInsights.map(insight => `<li>${insight}</li>`).join('')}
+        </ul>
       </div>
     `;
+  }
+  
+  card.innerHTML = `
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+      <div style="font-weight: bold;">${period.period}</div>
+      ${period.similarity ? `
+        <div style="font-size: 0.85rem; opacity: 0.8;">Similarity: ${Math.round(period.similarity * 100)}%</div>
+      ` : ''}
+    </div>
     
-    const text = `There are no significant recorded extreme crashes for ${monthNames[currentMonth - 1]} in Bitcoin's price history.`;
-    return { text, visual };
+    <div style="font-size: 0.9rem; margin-bottom: 5px;">
+      ${period.marketConditions}
+    </div>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin: 5px 0; font-size: 0.85rem;">
+      ${metricsHTML}
+    </div>
+    
+    <div style="font-size: 0.9rem; margin-top: 5px;">
+      <b>Subsequent Movement:</b> ${period.subsequentMovement || "Unknown"}
+    </div>
+    
+    ${period.decline ? `
+      <div style="font-size: 0.9rem; margin-top: 5px;">
+        <b>Decline Magnitude:</b> ${period.decline}
+      </div>
+    ` : ''}
+    
+    ${insightsHTML}
+  `;
+  
+  return card;
+}
+
+/**
+ * Get MVRV assessment
+ * @param {number} mvrv - MVRV value
+ * @returns {string} Assessment
+ */
+function getMVRVAssessment(mvrv) {
+  if (mvrv > 3.5) return "Historically indicates market tops";
+  if (mvrv > 2.5) return "Elevated valuation";
+  if (mvrv > 1.0) return "Neutral to slightly elevated";
+  return "Potential value zone";
+}
+
+/**
+ * Get NVT assessment
+ * @param {number} nvt - NVT value
+ * @returns {string} Assessment
+ */
+function getNVTAssessment(nvt) {
+  if (nvt > 65) return "Potentially overvalued";
+  if (nvt > 45) return "Moderately elevated";
+  if (nvt > 30) return "Neutral valuation range";
+  return "Potentially undervalued";
+}
+
+/**
+ * Get cycle position description
+ * @param {number} position - Cycle position
+ * @returns {string} Description
+ */
+function getCyclePositionDescription(position) {
+  if (position > 0.8) return "potential market top phase";
+  if (position > 0.6) return "late uptrend with increasing risk";
+  if (position > 0.4) return "mid-cycle phase";
+  if (position > 0.2) return "early uptrend phase";
+  return "accumulation phase";
+}
+
+/**
+ * Generate overall comparison assessment
+ * @param {Array} historicalData - Historical data
+ * @param {Object} currentMetrics - Current metrics
+ * @param {boolean} specificPeriod - Whether a specific period was requested
+ * @param {Array} timeReferences - Time references
+ * @returns {string} Assessment text
+ */
+function getOverallComparisonAssessment(historicalData, currentMetrics, specificPeriod, timeReferences) {
+  if (historicalData.length === 0) {
+    return "No directly comparable historical periods identified.";
   }
   
-  // Sort crashes by severity (most extreme first)
-  const sortedCrashes = [...monthCrashes].sort((a, b) => 
-    parseFloat(a.percentage) - parseFloat(b.percentage)
-  );
+  if (specificPeriod && timeReferences.length > 0) {
+    // Create specific time period assessment
+    const refText = timeReferences.map(ref => ref.display).join(' and ');
+    
+    if (historicalData[0].similarity > 0.8) {
+      return `The current market shows strong similarities to ${refText}, particularly in on-chain metrics and market structure. This historical analog suggests careful monitoring of ${historicalData[0].keyInsights[0].toLowerCase()} and ${historicalData[0].keyInsights[1].toLowerCase()}.`;
+    } else if (historicalData[0].similarity > 0.5) {
+      return `There are moderate similarities between current conditions and ${refText}, though with important differences. Key parallels include ${historicalData[0].keyInsights[0].toLowerCase()}, while the main differences relate to institutional involvement and market liquidity.`;
+    } else {
+      return `The current market shows limited direct similarities to ${refText}. Notable differences include market structure, participant composition, and macro environment.`;
+    }
+  }
   
-  // Check if there's a specific comparison request in the message
-  const isSeasonalComparison = /\b(season|month|yearly|annual)\b/i.test(message);
-  const isCycleComparison = /\b(cycle|position|halving|similar cycle|phase)\b/i.test(message);
-  const isMetricComparison = /\b(mvrv|nvt|on-chain|metrics|similar metrics)\b/i.test(message);
+  // General assessment based on highest similarity
+  const bestMatch = historicalData.sort((a, b) => b.similarity - a.similarity)[0];
   
-  // Create historical comparison content based on request type
-  if (isSeasonalComparison) {
-    return generateSeasonalComparison(sortedCrashes, currentMonth, monthNames);
-  } else if (isCycleComparison) {
-    return generateCycleComparison(cyclePosition, metrics);
-  } else if (isMetricComparison) {
-    return generateMetricComparison(metrics);
+  if (bestMatch.similarity > 0.8) {
+    return `The current market conditions show strong similarities to ${bestMatch.period}, particularly in terms of ${bestMatch.keyInsights[0].toLowerCase()} and ${bestMatch.keyInsights[1].toLowerCase()}.`;
+  } else if (bestMatch.similarity > 0.5) {
+    return `There are moderate similarities between current conditions and ${bestMatch.period}, with key parallels in ${bestMatch.keyInsights[0].toLowerCase()} but differences in market structure and participant composition.`;
   } else {
-    // Default comparison - show general historical crashes/events
-    return generateDefaultComparison(sortedCrashes, currentMonth, monthNames, cyclePosition, metrics);
+    return `The current market shows some similarities to historical periods but maintains unique characteristics in terms of market structure, on-chain metrics, and macro environment.`;
   }
+}
+
+/**
+ * Generate comparison text response
+ * @param {Array} historicalData - Historical data
+ * @param {Object} currentMetrics - Current metrics
+ * @param {Array} timeReferences - Time references
+ * @param {boolean} specificPeriod - Whether a specific period was requested
+ * @returns {string} Text response
+ */
+function generateComparisonText(historicalData, currentMetrics, timeReferences, specificPeriod) {
+  if (historicalData.length === 0) {
+    return "I couldn't find directly comparable historical periods based on your criteria. Current market conditions appear to have unique characteristics not matching previous cycles.";
+  }
+  
+  // Sort by similarity
+  const sortedData = [...historicalData].sort((a, b) => b.similarity - a.similarity);
+  const bestMatch = sortedData[0];
+  
+  let text = "";
+  
+  // Add current metrics overview
+  text += `Based on current on-chain metrics, `;
+  
+  if (currentMetrics.mvrv) {
+    text += `with MVRV at ${currentMetrics.mvrv.value.toFixed(2)} and `;
+  }
+  
+  if (currentMetrics.nvt) {
+    text += `NVT at ${currentMetrics.nvt.value.toFixed(2)}, `;
+  }
+  
+  // Add comparison with historical periods
+  if (specificPeriod && timeReferences.length > 0) {
+    // Specific time period comparison
+    const refText = timeReferences.map(ref => ref.display).join(' and ');
+    
+    if (bestMatch.similarity > 0.7) {
+      text += `we see strong similarities to ${refText}. `;
+    } else if (bestMatch.similarity > 0.5) {
+      text += `we see moderate similarities to ${refText}. `;
+    } else {
+      text += `we see limited similarities to ${refText}. `;
+    }
+    
+    if (historicalData.length > 0 && historicalData[0].keyInsights) {
+      text += `Key parallels include ${historicalData[0].keyInsights[0].toLowerCase()} and ${historicalData[0].keyInsights[1].toLowerCase()}. `;
+    }
+    
+    if (historicalData.length > 0 && historicalData[0].subsequentMovement) {
+      text += `Following this period, the market experienced ${historicalData[0].subsequentMovement.toLowerCase()}. `;
+    }
+  } else {
+    // General comparison based on similarity
+    text += `we see ${bestMatch.similarity > 0.7 ? 'strong' : bestMatch.similarity > 0.5 ? 'moderate' : 'some'} similarities to historical periods that experienced varying outcomes. `;
+    
+    if (bestMatch.period) {
+      text += `A similar metric environment in ${bestMatch.period} resulted in a ${bestMatch.subsequentMovement.includes('+') ? 'positive' : 'negative'} ${bestMatch.subsequentMovement.replace(/[\+\-]/g, '')} move over the subsequent two months. `;
+    }
+  }
+  
+  return text;
+}
+
+/**
+ * Calculate days between two dates
+ * @param {string} startDate - Start date in YYYY-MM-DD format
+ * @param {string} endDate - End date in YYYY-MM-DD format
+ * @returns {number} Number of days
+ */
+function daysBetween(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
 }
 
 /**
