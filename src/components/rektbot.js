@@ -305,7 +305,7 @@ function initializeKnowledgeGraph() {
  * @returns {Object} Response with text and visual
  */
 function handleDonationRequest(message) {
-  const bitcoinAddress = "bc1pfjhf946lwtjvzkkl965tdva3unvpa2n8plspns4aaej3pr6fuypsrx6svs";
+  const bitcoinAddress = "bc1qmce5xlnhw3mkd7uk3wd2sdd55f9vjpufdefhp8";
   
   // Create visual component
   const visual = document.createElement('div');

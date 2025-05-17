@@ -265,6 +265,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     });
         await RektBot.initialize();
+        
+        // Initialize donation nag
+        initDonationNag();
   } catch (error) {
     console.error('Error initializing application:', error);
     const loading = document.getElementById('loading');
@@ -420,3 +423,106 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// Donation Nag Screen
+function initDonationNag() {
+  // Check if we've already shown the screen this session
+  if (sessionStorage.getItem('donationNagShown')) {
+    return;
+  }
+  
+  // Check if user has chosen "Don't show again" within the past week
+  const lastDismissed = localStorage.getItem('donationNagDisabledUntil');
+  if (lastDismissed) {
+    const dismissedTime = parseInt(lastDismissed, 10);
+    const currentTime = new Date().getTime();
+    const oneWeek = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    
+    // If less than a week has passed, don't show
+    if (currentTime < dismissedTime + oneWeek) {
+      return;
+    }
+  }
+  
+  const donationNag = document.getElementById('donationNag');
+  const donationClose = document.getElementById('donationClose');
+  const donationLater = document.getElementById('donationLater');
+  const donationNoShow = document.getElementById('donationNoShow');
+  const copyButtons = document.querySelectorAll('.copy-address');
+  
+  if (!donationNag || !donationClose || !donationLater) {
+    console.error('Donation nag elements not found');
+    return;
+  }
+  
+  // Show donation nag after a delay
+  setTimeout(() => {
+    donationNag.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Mark as shown for this session
+    sessionStorage.setItem('donationNagShown', 'true');
+  }, 5000); // 5 second delay
+  
+  // Close donation nag
+  const closeDonationNag = () => {
+    donationNag.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // If "Don't show again" is checked, save the current timestamp to localStorage
+    if (donationNoShow && donationNoShow.checked) {
+      const currentTime = new Date().getTime();
+      localStorage.setItem('donationNagDisabledUntil', currentTime.toString());
+    }
+  };
+  
+  // Event listeners
+  donationClose.addEventListener('click', closeDonationNag);
+  donationLater.addEventListener('click', closeDonationNag);
+  
+  // Copy address to clipboard
+  copyButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const address = this.getAttribute('data-address');
+      
+      // Use Clipboard API if available
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(address)
+          .then(() => {
+            this.textContent = 'Copied!';
+            this.classList.add('copied');
+            
+            setTimeout(() => {
+              this.textContent = 'Copy';
+              this.classList.remove('copied');
+            }, 2000);
+          })
+          .catch(err => {
+            console.error('Failed to copy: ', err);
+          });
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = address;
+        textarea.style.position = 'fixed';
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        try {
+          document.execCommand('copy');
+          this.textContent = 'Copied!';
+          this.classList.add('copied');
+          
+          setTimeout(() => {
+            this.textContent = 'Copy';
+            this.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+        }
+        
+        document.body.removeChild(textarea);
+      }
+    });
+  });
+}
