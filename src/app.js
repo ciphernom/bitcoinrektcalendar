@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 import * as DataService from './core/data-service.js';
 import * as RiskModel from './core/risk-model.js';
 import * as EventDatabase from './core/event-database.js';
+import { walletBalance } from './components/wallet-balance.js';
 
 import { initializeEnhancedModel } from './core/integration-module.js';
 import { integrateOnChainRiskIntoGauge } from './core/enhanced-risk-model.js';
@@ -173,7 +174,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       await Portfolio.initialize();
       await RektLegends.initialize(); // Initialize new Rekt Legends component
       await SocialShare.initialize(); // Initialize new Social Share component
-      
+
+
 
       
       // 8. Fetch sentiment data
@@ -268,6 +270,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Initialize donation nag
         initDonationNag();
+        
+        // Initialize wallet balance component with delay to avoid interference
+        setTimeout(async () => {
+          try {
+            await walletBalance.initialize();
+            console.log('Wallet balance component initialized successfully');
+          } catch (error) {
+            console.error('Failed to initialize wallet balance component:', error);
+          }
+        }, 3000); // 3 second delay to ensure main app is fully loaded
+        
   } catch (error) {
     console.error('Error initializing application:', error);
     const loading = document.getElementById('loading');
