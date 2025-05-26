@@ -107,9 +107,20 @@ For permission requests, please contact the repository owner.
 
 ## Support the Project
 
-If you find this tool valuable, please consider donating:
+This project is free to use but costs time and resources to maintain. If you find it valuable, please consider supporting further development with a crypto donation:
 
-**Bitcoin**: `bc1pfjhf946lwtjvzkkl965tdva3unvpa2n8plspns4aaej3pr6fuypsrx6svs`
+SOL `FqNV5uKuhUZM6cYEpwirUm8TSZyR4ShgEtoHACfT4ddu`
+
+ETH `0x7aF1e10e2b3a0375DA1B4ca379350B54247D6749`
+
+BASE `0x7aF1e10e2b3a0375DA1B4ca379350B54247D6749`
+
+SUI `0x4163af4165b522d888ee1ad7ddf29423492d619e3932351b9718abb04f92e357`
+
+POLYGON `0x7aF1e10e2b3a0375DA1B4ca379350B54247D6749`
+
+BTC `bc1qmce5xlnhw3mkd7uk3wd2sdd55f9vjpufdefhp8`
+
 
 ## Acknowledgments
 
