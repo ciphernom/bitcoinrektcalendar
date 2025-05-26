@@ -4,625 +4,779 @@
  * RektBot Enhanced Knowledge Graph
  * Expanded knowledge representation for deeper context understanding
  * and more sophisticated responses.
+ *
+ * Version: 2.0
+ * Last Updated: 2025-05-21
  */
 
 const knowledgeGraph = {
   // Expanded entities with more comprehensive definitions and relationships
   entities: {
-    // Existing metrics with enhanced definitions and interpretations
+    // --- Core On-Chain Metrics ---
     "MVRV_Ratio": {
       type: "on-chain_metric",
-      definition: "Market Value to Realized Value ratio compares Bitcoin's market cap to its realized cap, revealing when the market price is above or below 'fair value' based on actual acquisition costs.",
-      relates_to: ["market_valuation", "crash_risk", "market_cycle_position", "price_discovery"],
-      thresholds: { 
-        high: 3.5, 
-        low: 1.0 
+      definition: "Market Value to Realized Value (MVRV) ratio compares Bitcoin's market capitalization to its realized capitalization. It indicates if the current market price is above or below the aggregate 'fair value' or cost basis of all coins in circulation, based on the price at which they last moved on-chain.",
+      calculation_summary: "Market Cap ÷ Realized Cap",
+      relates_to: ["market_valuation", "crash_risk", "market_cycle_position", "price_discovery", "long_term_holder_behavior", "short_term_holder_behavior", "NUPL"],
+      thresholds: {
+        extreme_overvaluation: 4.0, // Historically strong top signal
+        overvaluation: 2.5,         // Entering potentially overheated territory
+        fair_value_upper: 1.5,      // Upper boundary of fair value
+        fair_value_lower: 0.8,      // Lower boundary of fair value, potential undervaluation
+        undervaluation: 0.7          // Strong undervaluation, historical bottom signal
       },
       interpretation: {
-        above_3_5: "Historically indicates market tops and increased crash risk with 85% accuracy in previous cycles",
-        range_2_3_5: "Elevated values suggesting market exuberance and potential for increased volatility",
-        range_1_2: "Neutral territory, neither over nor undervalued, typical during mid-cycle consolidations",
-        below_1: "Historically a powerful accumulation zone with limited additional downside risk"
+        above_4_0: "Extreme overvaluation. Historically signals major market tops with high probability of significant correction. Suggests widespread profit-taking and potential exhaustion of new buyers.",
+        range_2_5_to_4_0: "Significant overvaluation. Market is likely euphoric. Increased risk of sharp pullbacks. Long-term holders may be distributing heavily.",
+        range_1_5_to_2_5: "Moderate overvaluation. Market is in a clear uptrend, but caution is warranted as risk increases. Profit-taking may start to accelerate.",
+        range_0_8_to_1_5: "Fair value to slight overvaluation. Represents a healthier market state, often seen during mid-cycle consolidations or sustainable uptrends.",
+        below_0_8: "Undervaluation. Market price is below the aggregate cost basis. Historically indicates periods of maximum pessimism, capitulation, and prime long-term accumulation opportunities."
       },
+      nuances: [
+        "MVRV Z-Score (MVRV value minus its historical mean, divided by standard deviation) can provide a more normalized view of extremes.",
+        "Short-Term Holder MVRV and Long-Term Holder MVRV offer insights into the behavior of different cohorts.",
+        "Context of the broader market cycle is crucial for interpreting MVRV."
+      ],
       historical_extremes: {
-        highest: {
-          value: 4.72,
-          date: "2021-04-14",
-          result: "Led to a 55% correction within 60 days"
-        },
-        lowest: {
-          value: 0.54,
-          date: "2020-03-13",
-          result: "Preceded a 1,600% bull run over the next 13 months"
-        }
+        highest: [
+          { value: 4.72, date: "2021-04-14", result: "Marked a local cycle top, followed by a ~55% correction over 2 months." },
+          { value: 3.96, date: "2017-12-17", result: "Marked the 2017 cycle top, followed by an ~84% bear market." },
+          { value: 5.8, date: "2013-04-09", result: "Marked a major top, followed by a ~80% correction."}
+        ],
+        lowest: [
+          { value: 0.40, date: "2015-01-14", result: "Marked the 2014-2015 bear market bottom." },
+          { value: 0.69, date: "2018-12-15", result: "Marked the 2018 bear market bottom." },
+          { value: 0.54, date: "2020-03-13", result: "COVID-19 crash bottom, a black swan event." }
+        ]
       },
-      calculation: "Market Cap (current price × circulating supply) ÷ Realized Cap (sum of UTXOs valued at the price when they last moved)"
+      currentValue: null, // To be updated by application state
+      currentZScore: null // To be updated by application state
     },
-    
+
     "NVT_Ratio": {
       type: "on-chain_metric",
-      definition: "Network Value to Transactions ratio compares Bitcoin's market cap to the USD value being transferred on-chain, similar to P/E ratio in traditional markets for valuation.",
-      relates_to: ["network_activity", "crash_risk", "network_utility", "market_valuation"],
-      thresholds: { 
-        high: 65, 
-        low: 30 
+      definition: "Network Value to Transactions (NVT) ratio compares Bitcoin's market capitalization to the daily USD value transacted on its blockchain. It's often likened to the Price-to-Earnings (P/E) ratio for stocks, assessing network valuation relative to its utility as a settlement layer.",
+      calculation_summary: "Market Cap ÷ Smoothed Daily On-Chain Transaction Volume (USD)",
+      relates_to: ["network_activity", "crash_risk", "network_utility", "market_valuation", "transaction_volume"],
+      thresholds: { // NVT Signal (NVTS) is often preferred, these are for classic NVT
+        overvaluation: 90,  // For NVT Signal, > 2.2
+        caution: 70,        // For NVT Signal, > 1.5
+        fair_value: 45,     // For NVT Signal, ~0.8-1.5
+        undervaluation: 25  // For NVT Signal, < 0.8
       },
       interpretation: {
-        above_65: "Potentially overvalued, price exceeding network utility, often precedes major corrections",
-        range_45_65: "Moderately elevated values, suggesting caution and potential for reversion to mean",
-        range_30_45: "Neutral range, balanced valuation relative to network transaction activity",
-        below_30: "Potentially undervalued relative to network activity, historically a positive signal"
+        above_90: "Potentially extreme overvaluation. Network value is very high compared to transaction throughput, suggesting speculative excess or declining utility.",
+        range_70_to_90: "Overvaluation. Caution is advised as the price may be outpacing fundamental network use.",
+        range_45_to_70: "Fair value to moderate overvaluation. Network activity is reasonably aligned with valuation, or slightly lagging.",
+        below_45: "Potential undervaluation. Network is settling a high value relative to its market cap, suggesting robust utility or growth potential."
       },
+      nuances: [
+        "NVT Signal (NVTS) uses a 90-day moving average of transaction volume, making it less noisy and more responsive than classic NVT.",
+        "High NVT can sometimes occur during periods of HODLing if transaction volume drops while price is stable or rising.",
+        "Needs to be contextualized with other metrics and market phase."
+      ],
       historical_extremes: {
-        highest: {
-          value: 82.9,
-          date: "2018-01-08",
-          result: "Preceded an 84% decline over the next 11 months"
-        },
-        lowest: {
-          value: 22.3,
-          date: "2019-04-02",
-          result: "Led to a 50% rally over the next 3 months"
-        }
+         highest: [
+          { value: 130, date: "2018-02-01", result: "Deep bear market, transaction volume collapsed faster than price initially." },
+          { value: 82.9, date: "2011-06-10", result: "Early cycle top."}
+        ],
+        lowest: [
+          { value: 7.5, date: "2011-01-20", result: "Very early days, high relative transaction volume." },
+          { value: 22.3, date: "2019-04-02", result: "Rally after bear market bottom, transaction volume recovered." }
+        ]
       },
-      calculation: "Market Cap ÷ Daily Transaction Volume (USD)"
+      currentValue: null,
+      currentZScore: null
     },
-    
-    "Volatility": {
-      type: "market_metric",
-      definition: "Measure of price fluctuations over a specific timeframe, typically calculated as the annualized standard deviation of daily returns.",
-      relates_to: ["crash_risk", "market_sentiment", "risk_premium", "option_pricing"],
-      thresholds: {
-        high: 0.05,
-        low: 0.02
-      },
-      interpretation: {
-        above_0_08: "Extreme volatility, typically occurs during market panics or major inflection points",
-        range_0_05_0_08: "High volatility, often signaling unsustainable price action in either direction",
-        range_0_02_0_05: "Normal range for Bitcoin's volatility during stable market phases",
-        below_0_02: "Unusually low volatility, often precedes major moves as liquidity dries up"
-      },
-      volatility_regime: {
-        bull_market: "Tends to decrease as bull markets mature, with occasional spikes during corrections",
-        bear_market: "Highest during capitulation phases, gradually decreases as markets bottom"
-      }
-    },
-    
-    // New metrics to expand knowledge
-    "Puell_Multiple": {
-      type: "on-chain_metric",
-      definition: "Ratio between the daily value of new bitcoins issued (in USD) and the 365-day moving average of this value, indicating miner profitability and market cycles.",
-      relates_to: ["miner_behavior", "market_cycle_position", "crash_risk", "accumulation_zones"],
-      thresholds: {
-        high: 4.0,
-        low: 0.5
-      },
-      interpretation: {
-        above_4: "Mining profitability at peak, historically indicates market tops and overvaluation",
-        range_1_5_4: "Elevated mining profitability, potential profit-taking phase for miners",
-        range_0_8_1_5: "Equilibrium range, neutral indicator for market cycles",
-        below_0_5: "Mining profitability stressed, historically excellent accumulation zone"
-      },
-      historical_extremes: {
-        highest: {
-          value: 6.7,
-          date: "2021-01-08",
-          result: "Preceded a major pull-back and multi-month consolidation"
-        },
-        lowest: {
-          value: 0.31,
-          date: "2020-03-16",
-          result: "Marked the bottom of the COVID crash and beginning of a new bull run"
-        }
-      }
-    },
-    
+
     "SOPR": {
       type: "on-chain_metric",
-      definition: "Spent Output Profit Ratio measures the profit ratio of all coins moved on a particular day, indicating market participants' profit-taking behavior.",
-      relates_to: ["market_sentiment", "profit_taking", "crash_risk", "accumulation_zones"],
+      definition: "Spent Output Profit Ratio (SOPR) is computed by dividing the realized value (in USD) by the value at creation (USD) of a spent output. It indicates whether, on average, coins being moved on-chain are being sold at a profit or loss.",
+      calculation_summary: "Price Sold ÷ Price Paid (for each UTXO)",
+      relates_to: ["market_sentiment", "profit_taking", "capitulation", "support_resistance_levels", "long_term_holder_behavior", "short_term_holder_behavior"],
       thresholds: {
-        high: 1.5,
-        low: 0.95
+        strong_resistance_bull: 1.03, // In bull markets, SOPR bouncing off 1 can signal continuation
+        support_bear: 0.97,         // In bear markets, SOPR finding resistance at 1 can signal continuation
+        capitulation_low: 0.90
       },
       interpretation: {
-        above_1_5: "Significant profit-taking, potential sign of market euphoria and increased sell pressure",
-        range_1_1_5: "Normal profit-taking in bull markets, sustainable uptrend if quickly absorbed",
-        around_1: "Equilibrium where coins are moving at roughly break-even, often a pivotal level",
-        below_0_95: "Coins moving at a loss, often indicates capitulation but can signal buying opportunities"
-      }
+        above_1_0: "Coins are, on average, being sold for a profit. Sustained values > 1.03 can indicate euphoria and potential for a local top if demand wanes.",
+        equals_1_0: "Coins are, on average, being sold at break-even. This level often acts as support in bull markets (holders reluctant to sell at a loss) and resistance in bear markets (holders selling at first opportunity to break even).",
+        below_1_0: "Coins are, on average, being sold at a loss. Sustained values < 1.0 indicate panic, fear, or capitulation. Deep drops below 1 (e.g., <0.95) often mark market bottoms."
+      },
+      nuances: [
+        "Adjusted SOPR (aSOPR) excludes transactions with a lifespan of less than 1 hour, filtering out noise.",
+        "Short-Term Holder SOPR (STH-SOPR) and Long-Term Holder SOPR (LTH-SOPR) provide insights into different investor cohorts.",
+        "A SOPR reset (dipping to or below 1 and then rising) during an uptrend is often a bullish sign."
+      ],
+      currentValue: null
     },
-    
-    "Stablecoin_Supply_Ratio": {
+
+    "Puell_Multiple": {
+      type: "on-chain_metric",
+      definition: "The Puell Multiple is calculated by dividing the daily issuance value of bitcoins (in USD) by the 365-day moving average of daily issuance value. It explores miner profitability and its impact on market cycles.",
+      calculation_summary: "Daily Coin Issuance (USD) ÷ 365-day MA of Daily Coin Issuance (USD)",
+      relates_to: ["miner_behavior", "market_cycle_position", "crash_risk", "accumulation_zones", "halving"],
+      thresholds: {
+        overvaluation_extreme: 4.0, // Historically strong top signal
+        overvaluation_high: 2.5,
+        fair_value_range: [0.6, 1.5],
+        undervaluation_low: 0.5,   // Historically strong bottom signal
+        undervaluation_extreme: 0.3
+      },
+      interpretation: {
+        above_4_0: "Extreme miner profitability. Historically signals market tops as miners are heavily incentivized to sell. Indicates market is likely overheated.",
+        range_2_5_to_4_0: "High miner profitability. Miners are likely taking significant profits. Increased risk of sell pressure from miners.",
+        range_0_6_to_1_5: "Fair value / Equilibrium. Miner revenue is in line with historical norms. Neutral market signal.",
+        below_0_5: "Low miner profitability / Miner stress. Miners may be unprofitable, leading to capitulation. Historically signals excellent long-term buying opportunities and market bottoms."
+      },
+      nuances: [
+        "Impacted by both price changes and halving events (which cut daily issuance).",
+        "Miner capitulation (hash rate drops as Puell Multiple is low) can precede significant price recoveries."
+      ],
+      historical_extremes: {
+        highest: [
+          { value: 6.7, date: "2021-01-08", result: "Preceded a multi-month consolidation and a local top." },
+          { value: 11.9, date: "2013-04-05", result: "Marked a major cycle top."}
+        ],
+        lowest: [
+          { value: 0.31, date: "2020-03-16", result: "COVID-19 crash bottom." },
+          { value: 0.33, date: "2018-11-28", result: "Near the 2018 bear market bottom." }
+        ]
+      },
+      currentValue: null
+    },
+
+    "NUPL": {
+      type: "on-chain_metric",
+      definition: "Net Unrealized Profit/Loss (NUPL) indicates the overall sentiment of the market by showing the difference between unrealized profit and unrealized loss across all coins in the network. It is calculated as (Market Cap - Realized Cap) / Market Cap.",
+      calculation_summary: "(Market Cap - Realized Cap) / Market Cap",
+      relates_to: ["market_sentiment", "market_cycle_position", "MVRV_Ratio", "profit_taking", "capitulation"],
+      thresholds_zones: {
+        euphoria_greed: 0.75, // NUPL > 0.75
+        belief_denial: 0.5,   // NUPL 0.5 - 0.75
+        optimism_anxiety: 0.25,// NUPL 0.25 - 0.5
+        hope_fear: 0.0,       // NUPL 0.0 - 0.25
+        capitulation: -0.25   // NUPL < 0.0 (sometimes defined as < -0.25 for extreme)
+      },
+      interpretation: {
+        above_0_75: "Euphoria/Greed. Extreme unrealized profits. Historically signals market tops and high risk of correction. Corresponds to MVRV > ~3.0-3.5.",
+        range_0_5_to_0_75: "Belief/Denial. Significant unrealized profits, market is optimistic. In bull markets, this is belief; in early bear, denial.",
+        range_0_25_to_0_5: "Optimism/Anxiety. Holders are in moderate profit. Uptrends show optimism; downtrends can bring anxiety.",
+        range_0_0_to_0_25: "Hope/Fear. Holders are slightly in profit or breaking even. Uptrends show hope; downtrends bring fear.",
+        below_0_0: "Capitulation. Aggregate unrealized losses. Historically signals market bottoms and maximum pessimism. Corresponds to MVRV < 1.0."
+      },
+      nuances: [
+        "Short-Term Holder NUPL and Long-Term Holder NUPL provide cohort-specific sentiment.",
+        "The transitions between these zones are often key inflection points."
+      ],
+      currentValue: null
+    },
+
+    "Realized_HODL_Ratio": {
+      type: "on-chain_metric",
+      definition: "The Realized HODL Ratio (RHODL) compares the Realized Cap HODL Waves for 1-week old coins to 1-2 year old coins. It aims to identify market tops by assessing when short-term speculation significantly outweighs long-term holding.",
+      calculation_summary: "Ratio of 1wk Realized Cap HODL Wave to 1-2yr Realized Cap HODL Wave",
+      relates_to: ["market_cycle_position", "long_term_holder_behavior", "short_term_holder_behavior", "speculation_levels"],
+      thresholds: {
+        top_signal_extreme: 50000, // Values from Glassnode charts
+        top_signal_high: 30000
+      },
+      interpretation: {
+        above_50000: "Extreme market top. Indicates a very high proportion of wealth held by recent buyers compared to older hands, typical of euphoric tops.",
+        range_30000_to_50000: "High market top signal. Suggests significant speculation and potential for market overheating.",
+        below_500: "Market bottom / Early bull. Indicates wealth is predominantly held by long-term investors."
+      },
+      nuances: ["Sensitive to the age bands chosen for comparison.", "Effective at identifying cycle tops rather than bottoms."],
+      currentValue: null
+    },
+
+    "SSR": {
+      type: "on-chain_metric",
+      definition: "Stablecoin Supply Ratio (SSR) is the ratio of Bitcoin's market cap to the total market cap of major stablecoins. A lower SSR suggests greater potential buying power from stablecoins relative to Bitcoin's size.",
+      calculation_summary: "Bitcoin Market Cap ÷ Aggregate Stablecoin Market Cap",
+      relates_to: ["market_liquidity", "buying_power", "market_sentiment", "capital_rotation"],
+      thresholds: { // These are highly dynamic and change as stablecoin market cap grows
+        low_ssr_bullish: 5,  // Historically, SSR below 5-10 indicated strong buying power
+        high_ssr_bearish: 20 // Historically, SSR above 20-25 indicated less buying power
+      },
+      interpretation: {
+        ssr_low: "Low SSR (e.g., < 5-10, but this threshold evolves). Indicates substantial stablecoin supply relative to Bitcoin's market cap, suggesting high potential 'dry powder' to buy Bitcoin. Bullish.",
+        ssr_high: "High SSR (e.g., > 20-25, evolving threshold). Indicates less stablecoin supply relative to Bitcoin's market cap, suggesting lower immediate buying power. Potentially bearish or signals market saturation."
+      },
+      nuances: [
+        "The absolute SSR values for 'high' and 'low' change over time as the total stablecoin market cap grows.",
+        "Trends in SSR (rising or falling) are often more important than absolute levels.",
+        "A rapidly falling SSR can indicate capital flowing into Bitcoin from stablecoins."
+      ],
+      currentValue: null
+    },
+
+    "Exchange_Netflow": {
+      type: "on-chain_metric",
+      definition: "The net amount of Bitcoin flowing into or out of all exchange wallets. Positive netflow (inflow) suggests potential selling pressure. Negative netflow (outflow) suggests accumulation or movement to self-custody.",
+      calculation_summary: "Total BTC Inflows to Exchanges - Total BTC Outflows from Exchanges",
+      relates_to: ["exchange_balances", "selling_pressure", "accumulation_behavior", "market_sentiment"],
+      interpretation: {
+        sustained_inflows: "Sustained large inflows often precede price declines as coins are moved to exchanges to be sold.",
+        sustained_outflows: "Sustained large outflows often indicate accumulation by investors moving coins to cold storage, typically bullish.",
+        spikes_inflow: "Sudden large inflow spikes can signal panic selling or large players preparing to sell.",
+        spikes_outflow: "Sudden large outflow spikes can signal significant accumulation events or OTC deals."
+      },
+      nuances: [
+        "Must be analyzed in context (e.g., outflows during a bull run are very bullish; inflows during a bear market confirm selling pressure).",
+        "Exchange-specific flows can also be insightful (e.g., flows to derivative exchanges vs. spot exchanges)."
+      ],
+      currentValue: null // Typically a daily or hourly value
+    },
+
+    // --- Market Metrics ---
+    "Volatility_Realized": {
       type: "market_metric",
-      definition: "Ratio between Bitcoin's market cap and the market cap of all stablecoins, indicating potential buying power on the sidelines.",
-      relates_to: ["market_liquidity", "buying_power", "market_cycle_position"],
-      thresholds: {
-        high: 80,
-        low: 20
+      definition: "Realized Volatility measures the actual historical price fluctuations of Bitcoin over a specific period (e.g., 30-day, 90-day annualized standard deviation of daily returns).",
+      relates_to: ["crash_risk", "market_sentiment", "risk_premium", "option_pricing", "liquidity"],
+      thresholds: { // Annualized
+        extreme: 0.12, // 120% annualized
+        high: 0.08,    // 80%
+        moderate: 0.04,// 40%
+        low: 0.02     // 20%
       },
       interpretation: {
-        above_80: "Limited stablecoin liquidity relative to Bitcoin market cap, potentially limiting further upside",
-        range_40_80: "Moderate stablecoin reserves, typical during mid-cycle phases",
-        below_20: "Abundant stablecoin liquidity relative to Bitcoin's market size, significant potential buying power"
-      }
+        above_0_12: "Extreme volatility. Typically seen during major market crashes, parabolic run-ups, or black swan events. Unsustainable.",
+        range_0_08_to_0_12: "High volatility. Often signals market uncertainty, potential trend changes, or climactic moves.",
+        range_0_04_to_0_08: "Moderate/Normal Bitcoin volatility. Common during established trends or consolidations.",
+        below_0_02: "Unusually low volatility ('volatility compression'). Often precedes a significant price expansion in either direction as market energy builds."
+      },
+      nuances: ["Different timeframes (e.g., 7-day vs 90-day) capture different aspects of volatility.", "Compare to Implied Volatility for insights into market expectations."],
+      currentValue30d: null
     },
-    
-    // Risk Concepts with expanded definitions
+
+    "Volatility_Implied": {
+      type: "market_metric",
+      definition: "Implied Volatility (IV) is derived from options prices and represents the market's expectation of future price volatility. Often tracked via indices like DVOL (Deribit Bitcoin Volatility Index).",
+      relates_to: ["Volatility_Realized", "option_pricing", "market_sentiment", "risk_perception", "hedging_activity"],
+      interpretation: {
+        iv_higher_than_rv: "Market expects future volatility to be higher than recent past volatility. Can signal anticipation of a significant event or increased uncertainty. Options are relatively expensive.",
+        iv_lower_than_rv: "Market expects future volatility to be lower than recent past volatility. Can signal complacency or belief that a volatile period is ending. Options are relatively cheap.",
+        iv_spikes: "Spikes in IV often coincide with fear or major market events, indicating high demand for options (hedging or speculation)."
+      },
+      nuances: ["Term structure of IV (IV for different option expiries) provides insights into short-term vs. long-term expectations.", "IV skew (difference in IV for puts vs. calls) indicates directional bias."],
+      currentValue: null // e.g., DVOL index value
+    },
+
+    "Funding_Rates": {
+      type: "market_metric",
+      definition: "Funding rates are periodic payments exchanged between long and short traders in perpetual futures contracts to keep the contract price close to the spot price. Positive rates mean longs pay shorts; negative rates mean shorts pay longs.",
+      relates_to: ["leverage_levels", "market_sentiment", "speculation_levels", "liquidation_cascades"],
+      thresholds: { // Typical 8-hour rates
+        extreme_positive: 0.05, // % per 8h
+        high_positive: 0.02,
+        neutral_range: [-0.01, 0.01],
+        high_negative: -0.02,
+        extreme_negative: -0.05
+      },
+      interpretation: {
+        sustained_extreme_positive: "Sustained high positive funding (e.g., >0.05% per 8h or >50% annualized) indicates excessive bullish leverage and euphoria. Increases risk of long squeezes and sharp corrections.",
+        sustained_high_negative: "Sustained high negative funding indicates excessive bearish leverage. Increases risk of short squeezes and sharp rallies.",
+        neutral: "Funding rates near zero suggest balanced leverage and sentiment in the derivatives market."
+      },
+      nuances: ["Consistent positive funding is normal in bull markets but extremes are warning signs.", "Funding rates can be a contrarian indicator at extremes."],
+      currentValue: null // Average funding rate
+    },
+
+    "Open_Interest": {
+      type: "market_metric",
+      definition: "Open Interest (OI) represents the total number of outstanding derivative contracts (e.g., futures, options) that have not been settled. High OI indicates more capital and leverage in the derivatives market.",
+      relates_to: ["leverage_levels", "speculation_levels", "market_volatility_potential", "liquidation_cascades"],
+      interpretation: {
+        rising_oi_with_price_up: "Confirms uptrend, new money flowing in (bullish).",
+        rising_oi_with_price_down: "Confirms downtrend, new money shorting (bearish).",
+        falling_oi_with_price_up: "Uptrend may be losing momentum, short covering (caution).",
+        falling_oi_with_price_down: "Downtrend may be losing momentum, longs closing (potential bottoming).",
+        extreme_high_oi: "Record high OI, especially if price is also at extremes, can signal an over-leveraged market prone to sharp corrections/squeezes."
+      },
+      nuances: ["OI should be analyzed in conjunction with price action, funding rates, and volume.", "OI denominated in BTC vs. USD can tell different stories about leverage."],
+      currentValue: null // Total OI in USD or BTC
+    },
+
+    // --- Risk Concepts ---
     "crash_risk": {
       type: "risk_assessment_concept",
-      definition: "Probability of a significant Bitcoin price correction (15%+ decline within 30 days), based on historical patterns, on-chain metrics, market structure, and sentiment indicators.",
-      influenced_by: ["MVRV_Ratio", "NVT_Ratio", "Volatility", "market_sentiment", "market_cycle_position", "Puell_Multiple", "SOPR", "liquidation_cascades"],
-      levels: {
-        extreme: "Above 80% probability, historically coinciding with major market tops, leveraged speculation, and on-chain divergences",
-        high: "65-80% probability, elevated risks suggesting defensive positioning, trailing stops, and reduced leverage",
-        moderate: "45-65% probability, typical market conditions warranting standard risk management practices",
-        low: "25-45% probability, favorable risk/reward conditions though still requiring position sizing discipline",
-        very_low: "Below 25% probability, historically rare periods of minimal downside risk, opportune for strategic accumulation"
+      definition: "The assessed probability of a significant Bitcoin price decline (e.g., >15-20% within a short period like 7-30 days). This is a composite risk derived from multiple indicators.",
+      influenced_by: ["MVRV_Ratio", "NVT_Ratio", "Volatility_Realized", "market_sentiment", "market_cycle_position", "Puell_Multiple", "SOPR", "NUPL", "Funding_Rates", "Open_Interest", "liquidation_cascades", "macroeconomic_factors", "regulatory_risk"],
+      levels: { // Example probability bands for a 30-day crash >20%
+        extreme: { range: [0.80, 1.00], description: "Extreme probability. Conditions historically align with major market tops, widespread euphoria, extreme leverage, and significant on-chain divergences. Defensive strategies highly recommended." },
+        high: { range: [0.60, 0.79], description: "High probability. Market shows multiple signs of overheating or significant stress. Increased caution, risk reduction, and hedging may be appropriate." },
+        moderate: { range: [0.40, 0.59], description: "Moderate probability. Typical market conditions with balanced risk. Standard risk management and strategic positioning are suitable." },
+        low: { range: [0.20, 0.39], description: "Low probability. Conditions generally appear stable or favorable. Opportunities may be present, but risk management is still crucial." },
+        very_low: { range: [0.00, 0.19], description: "Very low probability. Historically rare periods of deep undervaluation or strong, early-stage recovery. Maximum opportunity for accumulation, though black swans are always possible." }
       },
       historical_indicators: {
-        effective: ["Extreme MVRV values", "Unsustainable funding rates", "Declining network activity despite price increases"],
-        false_signals: ["Short-term sentiment indicators", "Single-metric approaches without context", "Exchange FUD without on-chain confirmation"]
-      }
+        reliable_top_signals: ["MVRV > 3.5-4.0", "Puell Multiple > 4.0", "NUPL > 0.75 (Euphoria)", "Sustained extreme positive funding rates", "RHODL Ratio peaks"],
+        reliable_bottom_signals: ["MVRV < 0.8", "Puell Multiple < 0.5", "NUPL < 0 (Capitulation)", "Hash Ribbon buy signal", "Significant exchange outflows"]
+      },
+      currentAssessment: null // To be updated by application
     },
-    
+
     "liquidation_cascades": {
       type: "market_risk_concept",
-      definition: "Chain reaction of forced position closures in leveraged markets, where initial price movements trigger liquidations, creating further price pressure and additional liquidations.",
-      relates_to: ["volatility", "crash_risk", "market_structure", "leverage"],
+      definition: "A rapid chain reaction of forced selling in leveraged derivative markets. An initial price move triggers liquidations, which adds selling/buying pressure, causing further price movement and more liquidations.",
+      relates_to: ["Volatility_Realized", "crash_risk", "market_structure", "leverage_levels", "Funding_Rates", "Open_Interest"],
       warning_signs: {
-        high_open_interest: "Excessive buildup of futures open interest relative to spot market liquidity",
-        funding_rates: "Sustained extreme positive funding rates indicating overleveraged long positions",
-        low_spot_volume: "Declining spot volume combined with increasing derivatives volume suggests thin support",
-        clustered_liquidation_levels: "High concentration of stop-losses or liquidation levels within a narrow price range"
+        high_leverage_ratio: "Elevated aggregate estimated leverage ratio across exchanges.",
+        record_open_interest: "Open Interest reaching new all-time highs, especially during periods of low spot volume.",
+        extreme_funding_rates: "Sustained, very high positive or negative funding rates indicating lopsided positioning.",
+        clustered_liquidation_levels: "Visible clusters of liquidation prices just above/below key support/resistance.",
+        low_market_depth: "Thin order books on spot exchanges, making it easier for large liquidations to move price significantly."
       },
+      impact: "Can turn minor corrections into major crashes or small rallies into violent short squeezes. Increases overall market volatility.",
       historical_examples: [
-        { date: "2021-04-18", price_impact: "-27% in 48 hours", trigger: "Mining hash rate concerns and overleveraged longs" },
-        { date: "2021-05-19", price_impact: "-43% in 24 hours", trigger: "China mining ban announcement with record open interest" },
-        { date: "2022-11-08", price_impact: "-22% in 48 hours", trigger: "FTX collapse with contagion effects" }
+        { event: "March 12, 2020 (COVID Crash)", details: "Massive long liquidations across all crypto assets as global markets panicked. BTC dropped ~50% in 24h." },
+        { event: "May 19, 2021", details: "Over $8 billion in long liquidations in a single day due to cascading sell-offs triggered by regulatory FUD and over-leveraged market." },
+        { event: "FTX Collapse (Nov 2022)", details: "Contagion and forced selling led to significant liquidations, exacerbating the price decline." }
       ]
     },
-    
-    // Market Conditions with more detailed characterizations
-    "bull_market": {
-      type: "market_condition",
-      definition: "Extended period of rising prices, increasing adoption metrics, and general optimism in the market, typically lasting 12-18 months in Bitcoin cycles.",
-      characterized_by: ["higher_highs", "higher_lows", "positive_sentiment", "increasing_adoption", "rising_metrics", "media_attention"],
-      average_duration_days: 550,
-      sub_phases: {
-        disbelief: "Early phase where many doubt the sustainability of the uptrend, typically offering excellent risk/reward",
-        acceptance: "Mid-cycle consolidation where the uptrend becomes widely acknowledged but not yet mainstream",
-        euphoria: "Final phase characterized by parabolic price action, mainstream FOMO, and unsustainable gains"
-      },
-      risk_evolution: "Risk of major corrections typically increases as bull market progresses, with highest risk during euphoria phase"
-    },
-    
-    "bear_market": {
-      type: "market_condition",
-      definition: "Extended period of falling prices, declining market interest, and general pessimism, often lasting 8-30 months in Bitcoin's history.",
-      characterized_by: ["lower_highs", "lower_lows", "negative_sentiment", "reduced_trading_volume", "declining_media_coverage"],
-      average_duration_days: 400,
-      sub_phases: {
-        denial: "Initial decline from cycle top, often with strong relief rallies that ultimately fail",
-        panic: "Steepest decline phase with capitulation events and maximum fear",
-        depression: "Extended bottom formation with low volatility and diminished public interest",
-        hope: "Early signs of accumulation and recovery, but still met with widespread skepticism"
-      },
-      accumulation_indicators: ["Smart money wallet accumulation", "Declining exchange balances", "Surge in long-term holder supply"]
-    },
-    
-    // Bitcoin Specific Events with enhanced historical context
-    "halving": {
-      type: "network_event",
-      definition: "Programmed reduction of Bitcoin mining reward by 50%, occurring approximately every 4 years (210,000 blocks), reducing new supply issuance.",
-      historical_dates: ["2012-11-28", "2016-07-09", "2020-05-11", "2024-04-20"],
-      market_impact: "Historically preceded bull markets due to reduced supply issuance, though increasing market efficiency may reduce impact over time",
-      relates_to: ["supply_issuance", "market_cycle_position", "miner_economics"],
-      post_halving_performance: {
-        "2012": "+8,995% in 12 months",
-        "2016": "+284% in 18 months",
-        "2020": "+559% in 6 months"
-      },
-      economic_theory: "Stock-to-flow ratio increases with each halving, potentially driving higher equilibrium prices if demand remains constant or increases"
-    },
-    
-    // New event types
-    "black_swan_event": {
-      type: "market_event",
-      definition: "Unpredictable event with severe consequences, characterized by extreme rarity, severe impact, and retrospective predictability.",
-      historical_examples: [
-        { event: "COVID-19 Market Crash", date: "2020-03-12", impact: "-50% in 24 hours", recovery_time: "~60 days" },
-        { event: "FTX Collapse", date: "2022-11-08", impact: "-22% in 4 days", recovery_time: "~180 days" },
-        { event: "Mt. Gox Hack", date: "2014-02-07", impact: "-60% over several weeks", recovery_time: "~2 years" }
+
+    "regulatory_risk": {
+      type: "external_risk_concept",
+      definition: "The risk that changes in laws, regulations, or government policies will negatively impact the Bitcoin price, adoption, or the broader cryptocurrency ecosystem.",
+      relates_to: ["market_sentiment", "adoption_rate", "institutional_investment", "exchange_operations"],
+      categories: [
+        "Trading restrictions or bans",
+        "Taxation changes (capital gains, mining income)",
+        "Stablecoin regulations",
+        "DeFi regulations",
+        "Exchange licensing and compliance (KYC/AML)",
+        "Mining restrictions (environmental or capital controls)",
+        "Securities classification for crypto assets"
       ],
-      risk_management: {
-        portfolio_allocation: "Limiting crypto to reasonable percentage of overall portfolio",
-        exchange_risk: "Distributing holdings across multiple venues and self-custody",
-        cash_reserves: "Maintaining liquid reserves for potential accumulation during extreme dislocations"
-      }
+      impact_potential: "High. Can cause sharp, sudden price drops, reduce liquidity, hinder adoption, or increase operational costs for businesses.",
+      monitoring_sources: ["Government announcements", "Regulatory agency statements (SEC, CFTC, Treasury)", "Proposed legislation", "International bodies (FATF, FSB)"]
     },
-    
-    // Market Cycle Concepts with more detailed phases
+
+    // --- Market Conditions & Cycles ---
     "market_cycle_position": {
       type: "cycle_concept",
-      definition: "Current position within the Bitcoin market cycle, from 0% (cycle bottoms) to 100% (cycle tops), based on multiple indicators and historical patterns.",
-      relates_to: ["crash_risk", "bull_market", "bear_market", "halving", "adoption_curve"],
-      interpretation: {
-        range_0_20: "Early cycle accumulation phase with maximum upside potential, typically low risk despite fear",
-        range_20_40: "Early uptrend, recovery phase with declining risk as trend confirmation builds confidence",
-        range_40_60: "Mid-cycle, characterized by substantial corrections within prevailing uptrend",
-        range_60_80: "Late uptrend with increasing risk, requiring more careful position management",
-        range_80_100: "Cycle maturation with significant overvaluation risk, historically short-lived euphoria phase"
+      definition: "An estimation of where Bitcoin currently stands within its typical multi-year market cycle, often characterized by phases of accumulation, markup (bull market), distribution, and markdown (bear market). Typically ranges from 0% (bottom) to 100% (top).",
+      relates_to: ["crash_risk", "bull_market", "bear_market", "halving", "adoption_curve", "MVRV_Ratio", "NUPL", "long_term_holder_behavior"],
+      phases_detailed: {
+        accumulation: { range_pct: [0, 0.20], description: "Post-capitulation. Smart money accumulates. Sentiment: Despair/Hope. Volatility: Low. Risk: Low (historically best R:R).", indicators: ["MVRV < 1", "NUPL < 0", "Sustained exchange outflows", "Hash Ribbon buy"] },
+        early_bull: { range_pct: [0.21, 0.40], description: "Initial recovery. Trend begins to turn. Sentiment: Hope/Optimism. Volatility: Increasing. Risk: Low to Moderate.", indicators: ["Price breaks key MAs", "SOPR > 1 consistently", "Growing spot volume"] },
+        mid_bull_markup: { range_pct: [0.41, 0.60], description: "Established uptrend. Public participation grows. Sentiment: Optimism/Belief. Volatility: Moderate. Risk: Moderate.", indicators: ["Healthy pullbacks bought", "MVRV 1.5-2.5", "NVT rising but not extreme"] },
+        late_bull_euphoria: { range_pct: [0.61, 0.80], description: "Accelerating price. Mainstream FOMO. Sentiment: Belief/Thrill/Euphoria. Volatility: High. Risk: High.", indicators: ["Parabolic price moves", "Extreme positive funding", "LTH SOPR spikes (distribution)"] },
+        distribution_top: { range_pct: [0.81, 1.00], description: "Price peaks. Smart money distributes. Sentiment: Euphoria/Complacency. Volatility: Extreme, then declining. Risk: Extreme.", indicators: ["MVRV > 3.5", "NUPL > 0.75", "Bearish divergences on RSI/MACD", "Blow-off top volume"] },
+        early_bear_denial: { range_pct: [0.80, 0.61], description: "Initial sharp decline from top, often with strong relief rallies ('dead cat bounce'). Sentiment: Complacency/Anxiety. Volatility: High. Risk: High.", indicators: ["Lower highs, lower lows start", "SOPR struggles at 1", "Exchange inflows increase"] },
+        mid_bear_panic: { range_pct: [0.60, 0.41], description: "Sustained downtrend. Capitulation events. Sentiment: Anxiety/Fear/Panic. Volatility: Spikes during capitulation. Risk: Moderate (but painful).", indicators: ["Key supports break", "Forced selling", "Negative funding common"] },
+        late_bear_depression: { range_pct: [0.40, 0.21], description: "Price stabilizes at lows. Disinterest. Sentiment: Panic/Despair/Apathy. Volatility: Declining to very low. Risk: Low (approaching accumulation).", indicators: ["Volume dries up", "Sideways price action", "LTH accumulation begins"] }
       },
-      cycle_compression_theory: "Theory suggesting that Bitcoin's market cycles may be becoming shorter and less dramatic as the market matures and liquidity increases",
-      current_cycle_characteristics: {
-        institutional_influence: "Growing institutional participation changing market dynamics versus previous retail-dominated cycles",
-        derivatives_impact: "Sophisticated derivatives markets potentially dampening volatility and extending cycles",
-        macro_correlation: "Increasing correlation with traditional risk assets during specific market regimes"
-      }
+      cycle_drivers: ["Halving (supply shock)", "Adoption S-curve", "Macroeconomic liquidity cycles", "Technological innovation", "Reflexivity"],
+      currentValue: null // To be updated by application
     },
-    //jailbreak
+
+    "bull_market": {
+      type: "market_condition",
+      definition: "An extended period characterized by generally rising prices, strong investor confidence, increasing adoption, positive news flow, and high trading volumes. Typically associated with the markup phase of a market cycle.",
+      characterized_by: ["Higher highs and higher lows in price", "Positive market sentiment (Optimism to Euphoria)", "Increased retail and institutional participation", "Strong performance of on-chain metrics (e.g., MVRV > 1.5, SOPR consistently > 1)", "Media hype and positive narratives"],
+      average_duration_days_btc: "~500-700 days from bottom to top (historical average, can vary)",
+      sub_phases: ["Early Bull (Recovery)", "Mid-Bull (Markup/Consolidation)", "Late Bull (Euphoria/Speculative Frenzy)"],
+      risk_profile: "Risk generally increases as the bull market progresses. Early stages offer best risk-reward; late stages are highest risk despite strong momentum."
+    },
+
+    "bear_market": {
+      type: "market_condition",
+      definition: "An extended period characterized by generally falling prices, weak investor confidence, declining adoption/interest, negative news flow, and low trading volumes. Typically associated with the markdown phase of a market cycle.",
+      characterized_by: ["Lower highs and lower lows in price", "Negative market sentiment (Fear to Despair)", "Reduced participation, retail often exits", "Weak performance of on-chain metrics (e.g., MVRV < 1, SOPR struggles at 1 or below)", "Negative media narratives, FUD"],
+      average_duration_days_btc: "~300-400 days from top to bottom (historical average, can vary)",
+      sub_phases: ["Early Bear (Distribution/Denial)", "Mid-Bear (Panic/Capitulation)", "Late Bear (Accumulation/Bottoming)"],
+      risk_profile: "Risk of further downside is high in early/mid stages. Late stages, while painful, can present long-term accumulation opportunities as risk of further significant drops diminishes."
+    },
+
+    "accumulation_phase": {
+        type: "market_phase",
+        definition: "A period in the market cycle, typically following a bear market, where informed investors and long-term holders gradually buy assets, often characterized by sideways price action, low volatility, and general market disinterest.",
+        relates_to: ["market_cycle_position", "bear_market", "long_term_holder_behavior", "Wyckoff_Method"],
+        indicators: ["Sustained exchange outflows", "Increase in LTH supply", "Low MVRV/NUPL values", "Volatility compression", "Rounded bottom chart patterns"],
+        sentiment: "Despair, Apathy, transitioning to Hope."
+    },
+
+    "distribution_phase": {
+        type: "market_phase",
+        definition: "A period in the market cycle, typically preceding a bear market, where informed investors and long-term holders gradually sell assets to less informed participants, often characterized by choppy/sideways price action at highs, and increasing volatility before a downturn.",
+        relates_to: ["market_cycle_position", "bull_market", "long_term_holder_behavior", "Wyckoff_Method"],
+        indicators: ["Sustained exchange inflows (often subtle)", "Decrease in LTH supply / LTH-SOPR spikes", "High MVRV/NUPL values", "Bearish divergences on TA indicators", "Topping chart patterns (e.g., Head & Shoulders)"],
+        sentiment: "Euphoria, Greed, transitioning to Complacency."
+    },
+
+    // --- Bitcoin Specific Events & Concepts ---
+    "halving": {
+      type: "network_event",
+      definition: "A pre-programmed event in Bitcoin's code that reduces the block reward given to miners by 50%. This occurs approximately every four years (every 210,000 blocks) and directly impacts the new supply issuance rate of Bitcoin.",
+      historical_dates: ["2012-11-28", "2016-07-09", "2020-05-11", "2024-04-20 (approx.)"],
+      market_impact_theory: "Reduces supply inflation. Historically, halvings have been associated with subsequent bull markets, though the direct causality is debated (coincidence with broader macro cycles, reflexivity, narrative power).",
+      impact_on_miners: "Increases mining difficulty per BTC earned, can force less efficient miners to capitulate if price doesn't compensate. Drives innovation in mining efficiency.",
+      relates_to: ["supply_issuance", "market_cycle_position", "miner_economics", "Puell_Multiple", "Stock_to_Flow_Model"],
+      post_halving_performance_avg_12m: "~+1000% (average across first 3, highly variable and past performance is not indicative of future results)",
+      narrative_effect: "Strongly bullish narrative often builds anticipation pre-halving and sustains interest post-halving."
+    },
+
+    "Stock_to_Flow_Model": {
+        type: "valuation_model",
+        definition: "A model that quantifies scarcity by comparing an asset's current stock (total circulating supply) to its flow (annual new production). Higher S2F ratios indicate greater scarcity. Popularized for Bitcoin by 'PlanB'.",
+        relates_to: ["halving", "supply_issuance", "market_valuation", "scarcity"],
+        interpretation_btc: "Bitcoin's S2F ratio doubles with each halving, theoretically increasing its scarcity and, according to the model, its price.",
+        criticism: ["Correlation vs. Causation debates", "Model may not hold as market matures", "Ignores demand-side factors", "Outlier sensitivity", "Non-stationarity of time series data."],
+        status: "The model's price predictions have significantly deviated from actual price post-2021, leading to widespread criticism of its predictive power."
+    },
+
+    // --- Technical Analysis Concepts ---
+    "Support_Level": {
+        type: "ta_concept",
+        definition: "A price level where an asset has historically found buying interest, preventing it from falling further. Represents a concentration of demand.",
+        relates_to: ["Resistance_Level", "trend_analysis", "market_structure", "price_action"],
+        identification: ["Previous price lows", "Significant moving averages (e.g., 200-day MA)", "Fibonacci retracement levels", "High volume nodes on VPVR"],
+        behavior: "Price may bounce off support. A break below strong support can signal further downside."
+    },
+    "Resistance_Level": {
+        type: "ta_concept",
+        definition: "A price level where an asset has historically found selling interest, preventing it from rising further. Represents a concentration of supply.",
+        relates_to: ["Support_Level", "trend_analysis", "market_structure", "price_action"],
+        identification: ["Previous price highs", "Significant moving averages", "Fibonacci extension levels", "High volume nodes on VPVR"],
+        behavior: "Price may be rejected at resistance. A break above strong resistance can signal further upside."
+    },
+    "Moving_Average_Convergence_Divergence": {
+        type: "ta_indicator",
+        definition: "MACD is a trend-following momentum indicator that shows the relationship between two moving averages of an asset's price. It consists of the MACD line, signal line, and histogram.",
+        relates_to: ["trend_analysis", "momentum_analysis", "technical_divergence"],
+        signals: {
+            bullish_crossover: "MACD line crosses above the signal line.",
+            bearish_crossover: "MACD line crosses below the signal line.",
+            bullish_divergence: "Price makes lower lows while MACD makes higher lows.",
+            bearish_divergence: "Price makes higher highs while MACD makes lower highs."
+        }
+    },
+    "Relative_Strength_Index": {
+        type: "ta_indicator",
+        definition: "RSI is a momentum oscillator that measures the speed and change of price movements. It oscillates between 0 and 100.",
+        relates_to: ["momentum_analysis", "overbought_oversold", "technical_divergence"],
+        thresholds: {
+            overbought: 70, // Traditional, some use 80 for Bitcoin
+            oversold: 30    // Traditional, some use 20 for Bitcoin
+        },
+        signals: {
+            overbought: "RSI > 70 (or 80) suggests asset may be overbought and due for a pullback.",
+            oversold: "RSI < 30 (or 20) suggests asset may be oversold and due for a bounce.",
+            divergence: "Discrepancies between RSI and price action can signal potential reversals."
+        }
+    },
+
+    // --- Market Sentiment Concepts ---
+    "Fear_Greed_Index_Crypto": {
+        type: "sentiment_indicator",
+        definition: "A composite index that measures current sentiment in the cryptocurrency market, typically on a scale from 0 (Extreme Fear) to 100 (Extreme Greed).",
+        relates_to: ["market_sentiment", "contrarian_investing", "market_cycle_position"],
+        components_example: ["Volatility", "Market Momentum/Volume", "Social Media Sentiment", "Surveys", "Bitcoin Dominance", "Google Trends data"],
+        interpretation: {
+            extreme_fear: "Historically, extreme fear (e.g., index < 20) can be a sign of capitulation and present buying opportunities for contrarians.",
+            extreme_greed: "Historically, extreme greed (e.g., index > 80) can signal market euphoria, overvaluation, and increased risk of correction."
+        },
+        currentValue: null // To be updated by external data source if integrated
+    },
+
+    // --- Macroeconomic Factors ---
+    "Inflation_CPI": {
+        type: "macroeconomic_factor",
+        definition: "Consumer Price Index (CPI) measures the average change over time in the prices paid by urban consumers for a market basket of consumer goods and services. A key measure of inflation.",
+        relates_to: ["monetary_policy", "interest_rates", "Bitcoin_as_inflation_hedge_narrative"],
+        impact_on_btc: "High inflation can strengthen the narrative for Bitcoin as a store of value or inflation hedge, potentially increasing demand. Conversely, aggressive monetary tightening to combat inflation can reduce liquidity and negatively impact risk assets like Bitcoin."
+    },
+    "Interest_Rates_Fed": {
+        type: "macroeconomic_factor",
+        definition: "The target range for the federal funds rate set by the U.S. Federal Reserve. Influences borrowing costs across the economy and global liquidity conditions.",
+        relates_to: ["monetary_policy", "Inflation_CPI", "market_liquidity", "risk_asset_valuation"],
+        impact_on_btc: "Lower interest rates / loose monetary policy generally increase liquidity and appetite for risk assets, potentially benefiting Bitcoin. Higher interest rates / tight monetary policy tend to reduce liquidity and can pressure Bitcoin prices as 'safe' assets become more attractive."
+    },
+
+    // --- Behavioral Finance Concepts ---
+    "FOMO": {
+        type: "behavioral_concept",
+        definition: "Fear Of Missing Out. An emotional response where investors buy an asset due to anxiety that they might miss out on a significant upward price movement, often leading to buying at market tops.",
+        relates_to: ["market_sentiment", "bull_market_euphoria", "speculation_levels", "crash_risk"],
+        indicators: ["Parabolic price increases", "Extreme greed on sentiment indices", "Surge in retail investor participation", "Mainstream media hype"]
+    },
+    "FUD": {
+        type: "behavioral_concept",
+        definition: "Fear, Uncertainty, and Doubt. The spread of negative information or sentiment, often intentionally, to cause investors to sell or avoid an asset.",
+        relates_to: ["market_sentiment", "bear_market_panic", "regulatory_risk", "news_impact"],
+        impact: "Can trigger panic selling, exacerbate price declines, and create buying opportunities if the FUD is unfounded or exaggerated."
+    },
+
+    // --- Easter Egg ---
     "cheesecake": {
       type: "easter_egg",
-      definition: "A rich, sweet dessert with a dense filling made of soft cheese, eggs, and sugar on a cookie or pastry crust.",
-      relates_to: ["crash_risk", "market_cycle_position", "volatility"],
+      definition: "A rich, sweet dessert with a dense filling made of soft cheese, eggs, and sugar on a cookie or pastry crust. Its relevance to Bitcoin risk is... debatable, but delicious.",
+      relates_to: ["crash_risk", "market_cycle_position", "Volatility_Realized", "stress_relief_mechanism"], // Humorous relations
       recipe: {
-        title: "Bitcoin Market Crash Cheesecake",
+        title: "Bitcoin Halving Hype Cheesecake",
         ingredients: [
-          "2 cups of hodler tears as base (collected during the last capitulation event)",
-          "3 packages of softened market sentiment",
-          "1 cup of sugar-coated technical analysis",
-          "4 liquidated positions, beaten until smooth",
-          "1 tablespoon of pure FOMO extract",
-          "A pinch of hash rate for flavor"
+          "4 blocks of cream cheese (representing 4-year cycles), softened",
+          "1.5 cups of granulated sugar (sweet returns)",
+          "1/4 cup of all-purpose flour (for market structure)",
+          "5 large eggs (representing 5 stages of grief in a bear market)",
+          "1/3 cup heavy cream (liquidity)",
+          "1 tablespoon lemon zest (for when life gives you lemons, make a correction)",
+          "1 teaspoon vanilla extract (the essence of HODLing)",
+          "1 crushed graham cracker crust (the foundation of the blockchain)"
         ],
         instructions: [
-          "Combine hodler tears with crushed buy-the-dip hopes to form the crust",
-          "Beat market sentiment until peaks form like a blow-off top",
-          "Mix in liquidated positions slowly, monitoring for volatility",
-          "Pour into springform portfolio and bake until golden like a Bitcoin",
-          "Let cool during a 3-month consolidation period",
-          "Top with a layer of fresh bull market euphoria before serving"
+          "Preheat oven to 350°F (175°C). Prepare for potential volatility.",
+          "In a large bowl, beat cream cheese until smooth, like a perfect breakout.",
+          "Gradually add sugar, beating until well combined – accumulate those gains.",
+          "Mix in flour. Add eggs one at a time, mixing on low speed after each, just like dollar-cost averaging.",
+          "Stir in heavy cream, lemon zest, and vanilla. Don't overmix, or you'll introduce FUD.",
+          "Pour batter into crust. Smooth the top, aiming for an all-time high.",
+          "Bake for 15 minutes. Reduce oven temperature to 250°F (120°C) – the post-halving difficulty adjustment.",
+          "Continue baking for 60-75 minutes, or until the center is almost set. Avoid opening the oven – don't panic sell.",
+          "Turn off oven and let cheesecake cool in oven with door slightly ajar for 1 hour – the consolidation phase.",
+          "Refrigerate for at least 6 hours, or overnight. Patience is key in crypto.",
         ],
-        serving_instructions: "Best enjoyed while watching 1-minute candles or reading price predictions on X."
+        serving_instructions: "Serve chilled. Garnish with a sprinkle of powdered sugar (representing a dusting of diamond hands) or fresh berries (representing altcoin diversification). Enjoy responsibly during periods of extreme market volatility."
       }
-    },
-    // New concepts
-    "reflexivity": {
-      type: "market_theory",
-      definition: "Self-reinforcing market processes where participants' biased perceptions affect fundamentals, which then reinforce those biases, creating feedback loops.",
-      relates_to: ["market_sentiment", "price_discovery", "bull_market", "bear_market"],
-      applications: {
-        bull_markets: "Rising prices attract more investors, increasing demand and reinforcing the uptrend",
-        bear_markets: "Falling prices create negative sentiment, triggering selling and reinforcing the downtrend",
-        capitulation: "Negative reflexivity reaches maximum intensity during capitulation events"
-      },
-      counteracting_forces: "Value investors, contrarians, and algorithmic trading can act as stabilizing forces against extreme reflexivity"
-    },
-    
-    "technical_divergence": {
-      type: "analysis_concept",
-      definition: "Discrepancy between price movement and technical indicators, often signaling potential trend reversals or continuation.",
-      relates_to: ["price_discovery", "crash_risk", "market_cycle_position"],
-      types: {
-        bullish: "Indicator making higher lows while price makes lower lows, suggesting diminishing downside momentum",
-        bearish: "Indicator making lower highs while price makes higher highs, suggesting weakening upside momentum"
-      },
-      significant_indicators: {
-        rsi: "Relative Strength Index divergences often precede major reversals",
-        volume: "Price rises on declining volume suggest unsustainable momentum",
-        on_chain: "Price increases with declining network activity can signal reduced fundamental support"
-      }
-    },
-    
-    "hash_ribbon": {
-      type: "miner_metric",
-      definition: "Indicator based on the relationship between short-term and long-term moving averages of Bitcoin's hash rate, signaling miner capitulation and subsequent accumulation opportunities.",
-      relates_to: ["miner_behavior", "market_cycle_position", "accumulation_zones"],
-      signals: {
-        capitulation: "Short-term hash rate MA crosses below long-term MA, indicating miner stress",
-        recovery: "Short-term hash rate MA crosses back above long-term MA, historically a strong buy signal"
-      },
-      historical_accuracy: "Has identified major buying opportunities throughout Bitcoin's history with minimal false signals"
     }
   },
-  
-  // Enhanced relationships with more nuanced connections
+
+  // Expanded relationships with more nuanced connections
   relationships: [
-    // Core metric relationships with updated strength values and descriptions
-    {
-      source: "MVRV_Ratio",
-      target: "crash_risk",
-      type: "influences",
-      strength: 0.85, // Increased from 0.8
-      description: "High MVRV values historically correlate with market tops and increased crash risk, with values above 3.5 consistently preceding major corrections"
-    },
-    {
-      source: "NVT_Ratio",
-      target: "crash_risk",
-      type: "influences",
-      strength: 0.75, // Increased from 0.7
-      description: "Elevated NVT suggests overvaluation relative to network utility, increasing crash probability as price disconnects from fundamental usage"
-    },
-    {
-      source: "Volatility",
-      target: "crash_risk",
-      type: "influences",
-      strength: 0.55, // Increased from 0.5
-      description: "Higher volatility often precedes major market movements, with extreme volatility sometimes indicating nearing climax moves"
-    },
-    {
-      source: "market_cycle_position",
-      target: "crash_risk",
-      type: "influences",
-      strength: 0.70, // Increased from 0.6
-      description: "Late-cycle positions (>70%) correlate with higher crash probability as market exuberance and leverage tend to peak near cycle tops"
-    },
-    
-    // New relationships for expanded metrics
-    {
-      source: "Puell_Multiple",
-      target: "crash_risk",
-      type: "influences",
-      strength: 0.75,
-      description: "Extreme Puell Multiple values (>4) historically indicate mining profitability peaks that align with market tops and increased correction probability"
-    },
-    {
-      source: "SOPR",
-      target: "crash_risk",
-      type: "influences",
-      strength: 0.65,
-      description: "Sustained high SOPR values indicate significant profit-taking, potentially leading to selling pressure and price corrections"
-    },
-    {
-      source: "Stablecoin_Supply_Ratio",
-      target: "market_cycle_position",
-      type: "indicates",
-      strength: 0.60,
-      description: "Low ratio suggests abundant buying power relative to Bitcoin's market cap, often seen in early to mid cycle positions"
-    },
-    
-    // Liquidation cascade relationships
-    {
-      source: "liquidation_cascades",
-      target: "crash_risk",
-      type: "amplifies",
-      strength: 0.80,
-      description: "Liquidation cascades can significantly amplify price movements, turning moderate corrections into severe drawdowns"
-    },
-    {
-      source: "Volatility",
-      target: "liquidation_cascades",
-      type: "triggers",
-      strength: 0.65,
-      description: "Spikes in volatility often trigger initial liquidations that can cascade if positioning is concentrated"
-    },
-    
-    // Technical analysis relationships
-    {
-      source: "technical_divergence",
-      target: "market_cycle_position",
-      type: "indicates",
-      strength: 0.55,
-      description: "Significant bearish divergences often appear near cycle tops, while bullish divergences frequently emerge near cycle bottoms"
-    },
-    // Mining relationships
-    {
-      source: "hash_ribbon",
-      target: "market_cycle_position",
-      type: "indicates",
-      strength: 0.70,
-      description: "Hash ribbon signals historically mark miner capitulation events that often precede new bull cycles"
-    },
-    {
-      source: "halving",
-      target: "hash_ribbon",
-      type: "influences",
-      strength: 0.75,
-      description: "Halvings directly impact miner economics, sometimes triggering hash ribbon capitulation signals as less efficient miners are forced offline"
-    },
-    
-    // Market theory relationships
-    {
-      source: "reflexivity",
-      target: "market_cycle_position",
-      type: "amplifies",
-      strength: 0.60,
-      description: "Reflexive market behavior tends to extend and amplify both bull and bear cycles beyond fundamental justifications"
-    },
-    {
-      source: "black_swan_event",
-      target: "crash_risk",
-      type: "overrides",
-      strength: 0.95,
-      description: "Black swan events can override normal market indicators, causing severe corrections regardless of other metrics"
-    }
+    // --- MVRV Relationships ---
+    { source: "MVRV_Ratio", target: "crash_risk", type: "positively_correlates_with", strength: 0.85, description: "Historically, MVRV values above 3.5-4.0 have strongly indicated market tops and preceded major corrections, signifying high unrealized profits and potential for mass selling." },
+    { source: "MVRV_Ratio", target: "market_cycle_position", type: "indicates_phase_of", strength: 0.9, description: "MVRV levels are key indicators of market cycle phases: <1 for bottoms/accumulation, 1-2.5 for uptrends/fair value, >2.5 for late-stage bull/distribution." },
+    { source: "MVRV_Ratio", target: "NUPL", type: "is_mathematically_related_to", strength: 1.0, description: "NUPL is derived from MVRV (NUPL = 1 - 1/MVRV). They provide similar signals about unrealized profit/loss in the market." },
+    { source: "MVRV_Ratio", target: "long_term_holder_behavior", type: "influences", strength: 0.7, description: "High MVRV often sees LTHs distributing (taking profits), while low MVRV sees LTHs accumulating." },
+
+    // --- NVT Relationships ---
+    { source: "NVT_Ratio", target: "crash_risk", type: "positively_correlates_with", strength: 0.70, description: "High NVT (especially NVTS) suggests network valuation is outpacing on-chain utility (transaction volume), increasing risk of a price correction to realign with fundamentals." },
+    { source: "NVT_Ratio", target: "network_activity", type: "is_inversely_proportional_to_given_fixed_marketcap", strength: 0.8, description: "For a given market cap, a higher NVT implies lower network transaction volume, and vice-versa." },
+
+    // --- SOPR Relationships ---
+    { source: "SOPR", target: "market_sentiment", type: "reflects", strength: 0.8, description: "SOPR values indicate aggregate profit-taking (SOPR > 1) or loss-realization (SOPR < 1), reflecting prevailing market sentiment and holder conviction." },
+    { source: "SOPR", target: "Support_Level", type: "identifies_potential", strength: 0.65, description: "SOPR bouncing off 1.0 during an uptrend often acts as dynamic support, as holders are reluctant to sell at a loss." },
+    { source: "SOPR", target: "Resistance_Level", type: "identifies_potential", strength: 0.65, description: "SOPR being rejected at 1.0 during a downtrend often acts as dynamic resistance, as holders sell at break-even." },
+
+    // --- Puell Multiple Relationships ---
+    { source: "Puell_Multiple", target: "miner_behavior", type: "reflects_profitability_of", strength: 0.9, description: "The Puell Multiple directly indicates miner profitability. High values incentivize selling, low values can cause miner capitulation." },
+    { source: "Puell_Multiple", target: "market_cycle_position", type: "indicates_phase_of", strength: 0.8, description: "Extreme Puell Multiple values (highs and lows) have historically aligned well with market cycle tops and bottoms." },
+    { source: "halving", target: "Puell_Multiple", type: "directly_impacts", strength: 0.9, description: "Halvings cut daily issuance, which can sharply increase the Puell Multiple if price remains stable or rises, or decrease it if price falls significantly." },
+
+    // --- NUPL Relationships ---
+    { source: "NUPL", target: "market_sentiment", type: "quantifies_aggregate", strength: 0.9, description: "NUPL directly measures the overall unrealized profit/loss state of the market, mapping to sentiment zones from Euphoria to Capitulation." },
+    { source: "NUPL", target: "market_cycle_position", type: "strongly_indicates_phase_of", strength: 0.9, description: "NUPL zones (Euphoria, Belief, Optimism, Hope, Capitulation) are highly correlated with different phases of the Bitcoin market cycle." },
+
+    // --- Volatility Relationships ---
+    { source: "Volatility_Realized", target: "crash_risk", type: "can_precede", strength: 0.6, description: "Periods of extremely low realized volatility can precede large, sharp price moves (expansion). High, climactic volatility can mark tops or bottoms." },
+    { source: "Volatility_Implied", target: "market_sentiment", type: "reflects_expectation_of", strength: 0.7, description: "High implied volatility suggests market participants expect significant future price swings, often tied to fear or anticipation of major events." },
+    { source: "Volatility_Realized", target: "liquidation_cascades", type: "can_trigger", strength: 0.75, description: "Sudden spikes in realized volatility are primary triggers for liquidation cascades in over-leveraged markets." },
+
+    // --- Derivatives Market Relationships ---
+    { source: "Funding_Rates", target: "leverage_levels", type: "indicates_bias_in", strength: 0.8, description: "Extreme funding rates suggest a lopsided leverage bias (e.g., too many longs or shorts), increasing risk of a squeeze." },
+    { source: "Funding_Rates", target: "market_sentiment", type: "reflects_short_term_speculative", strength: 0.75, description: "High positive funding reflects bullish speculation; high negative funding reflects bearish speculation in perpetual futures." },
+    { source: "Open_Interest", target: "leverage_levels", type: "measures_total", strength: 0.85, description: "High Open Interest signifies a large amount of capital and leverage in the derivatives market, increasing potential for volatility." },
+    { source: "Open_Interest", target: "liquidation_cascades", type: "fuels_potential_for", strength: 0.8, description: "Large Open Interest provides the 'fuel' for liquidation cascades; the higher the OI, the larger the potential cascade." },
+
+    // --- Cycle & Event Relationships ---
+    { source: "halving", target: "market_cycle_position", type: "historically_catalyzes_new", strength: 0.75, description: "Bitcoin halvings have historically been followed by significant bull markets, often initiating a new cycle phase." },
+    { source: "market_cycle_position", target: "crash_risk", type: "modulates", strength: 0.8, description: "Crash risk is generally lowest in early cycle phases and highest in late/top cycle phases." },
+    { source: "regulatory_risk", target: "crash_risk", type: "can_induce_sudden", strength: 0.7, description: "Negative regulatory news or actions can trigger sharp price drops and increase perceived crash risk." },
+    { source: "Inflation_CPI", target: "Bitcoin_as_inflation_hedge_narrative", type: "strengthens_or_weakens", strength: 0.6, description: "High inflation tends to strengthen the narrative for Bitcoin as an inflation hedge, potentially increasing demand, while low inflation may weaken it." },
+    { source: "Interest_Rates_Fed", target: "market_liquidity", type: "directly_impacts", strength: 0.75, description: "Federal Reserve interest rate policies significantly affect overall market liquidity, which in turn impacts investment flows into risk assets like Bitcoin." },
+
+    // --- Behavioral Finance Relationships ---
+    { source: "FOMO", target: "bull_market_euphoria", type: "is_characteristic_of", strength: 0.9, description: "FOMO is a primary driver of behavior during the euphoric late stages of a bull market, leading to parabolic price increases." },
+    { source: "FOMO", target: "crash_risk", type: "significantly_increases", strength: 0.8, description: "Widespread FOMO often leads to unsustainable valuations and speculative bubbles, dramatically increasing the risk of a subsequent crash." },
+    { source: "FUD", target: "bear_market_panic", type: "can_exacerbate", strength: 0.7, description: "FUD can intensify selling pressure and panic during bear markets or corrections, leading to deeper price declines." },
+
+    // --- Technical Analysis Relationships ---
+    { source: "Support_Level", target: "price_action", type: "acts_as_floor_for", strength: 0.7, description: "Strong support levels often halt price declines and can serve as accumulation zones or points for trend reversal." },
+    { source: "Resistance_Level", target: "price_action", type: "acts_as_ceiling_for", strength: 0.7, description: "Strong resistance levels often cap price advances and can serve as distribution zones or points for trend reversal." },
+    { source: "Relative_Strength_Index", target: "overbought_oversold", type: "measures", strength: 0.8, description: "RSI is a key indicator for identifying overbought (>70-80) or oversold (<20-30) conditions, suggesting potential price reversals." },
+    { source: "Moving_Average_Convergence_Divergence", target: "trend_analysis", type: "identifies_momentum_for", strength: 0.75, description: "MACD crossovers and divergences are used to identify changes in trend direction and momentum." },
+    { source: "technical_divergence", target: "crash_risk", type: "bearish_divergence_increases", strength: 0.65, description: "Bearish divergences (e.g., higher price highs with lower indicator highs) often precede price corrections by signaling weakening momentum." }
   ],
-  
-  // Keep existing query functions and add new ones
+
+  // --- Query Functions (existing and potentially new ones) ---
   getEntity: function(entityName) {
     return this.entities[entityName] || null;
   },
-  
+
   getRelatedEntities: function(entityName, relationshipType = null) {
-    const relationships = this.relationships.filter(r => 
-      (r.source === entityName || r.target === entityName) && 
-      (relationshipType === null || r.type === relationshipType)
+    const relationships = this.relationships.filter(r =>
+      (r.source === entityName || r.target === entityName) &&
+      (relationshipType === null || r.type === relationshipType || r.type.startsWith(relationshipType))
     );
-    
+
     return relationships.map(r => {
       const relatedEntityName = r.source === entityName ? r.target : r.source;
+      const direction = r.source === entityName ? "outgoing" : "incoming";
       return {
         entity: this.getEntity(relatedEntityName),
         name: relatedEntityName,
-        relationship: r
+        relationship: r.type,
+        strength: r.strength,
+        description: r.description,
+        direction: direction
       };
     });
   },
-  
+
   explainEntity: function(entityName, userKnowledgeLevel = "intermediate") {
     const entity = this.getEntity(entityName);
     if (!entity) return null;
-    
-    // Tailor explanation based on user knowledge level
+
     let explanation = {
-      name: entityName,
-      definition: entity.definition
+      name: entityName.replace(/_/g, ' '),
+      type: entity.type.replace(/_/g, ' '),
+      definition: entity.definition,
+      interpretation_summary: null,
+      details: {}
     };
-    
-    if (userKnowledgeLevel === "advanced") {
-      explanation.relationships = this.getRelatedEntities(entityName);
-      explanation.technicalDetails = entity.thresholds || entity.levels || entity.interpretation;
-      explanation.historicalContext = entity.historical_extremes || entity.post_halving_performance || entity.historical_examples;
+
+    if (entity.calculation_summary) {
+      explanation.details.calculation_summary = entity.calculation_summary;
     }
-    
-    if (entity.type === "on-chain_metric" || entity.type === "market_metric") {
-      explanation.interpretation = entity.interpretation;
+
+    if (entity.interpretation) {
+      let primaryInterpretation = "";
+      if (userKnowledgeLevel === "basic" && entity.interpretation.basic_summary) {
+        primaryInterpretation = entity.interpretation.basic_summary;
+      } else {
+        // Create a concise summary from detailed interpretations if no basic_summary
+        const keys = Object.keys(entity.interpretation);
+        if (keys.length > 0) {
+          primaryInterpretation = `Key levels include: ${keys.map(k => `${k.replace(/_/g, ' ')} (${entity.interpretation[k].substring(0,50)}...)`).join('; ')}`;
+        }
+      }
+      explanation.interpretation_summary = primaryInterpretation;
+      if (userKnowledgeLevel !== "basic") {
+        explanation.details.interpretation_levels = entity.interpretation;
+      }
     }
-    
+
+    if (entity.thresholds) {
+        explanation.details.key_thresholds = entity.thresholds;
+    }
+     if (entity.thresholds_zones) {
+        explanation.details.key_zones = entity.thresholds_zones;
+    }
+
+
+    if (entity.nuances && userKnowledgeLevel !== "basic") {
+      explanation.details.important_nuances = entity.nuances;
+    }
+
+    if (entity.historical_extremes && userKnowledgeLevel !== "basic") {
+      explanation.details.historical_extremes = entity.historical_extremes;
+    }
+
+    if (entity.historical_examples) {
+        explanation.details.historical_examples = entity.historical_examples;
+    }
+
+    if (entity.warning_signs && userKnowledgeLevel !== "basic") {
+        explanation.details.warning_signs = entity.warning_signs;
+    }
+
+     if (entity.phases_detailed && userKnowledgeLevel !== "basic") {
+        explanation.details.cycle_phases_detailed = entity.phases_detailed;
+    }
+
+    const related = this.getRelatedEntities(entityName);
+    if (related.length > 0) {
+      explanation.details.related_concepts = related.map(r => `${r.name.replace(/_/g, ' ')} (${r.relationship.replace(/_/g, ' ')})`).slice(0, 5); // Limit for brevity
+    }
+
     return explanation;
   },
-  
-  getInfluencingFactors: function(entityName) {
-    const influencedByRelationships = this.relationships.filter(r => 
-      r.target === entityName && (r.type === "influences" || r.type === "amplifies" || r.type === "triggers" || r.type === "overrides")
+
+  getInfluencingFactors: function(entityName, typeFilter = null) {
+    const influencedByRelationships = this.relationships.filter(r =>
+      r.target === entityName &&
+      (typeFilter ? r.type === typeFilter : true)
     );
-    
+
     return influencedByRelationships.map(r => ({
-      factor: r.source,
+      factor: r.source.replace(/_/g, ' '),
       strength: r.strength,
       description: r.description,
-      type: r.type,
-      entity: this.getEntity(r.source)
+      type: r.type.replace(/_/g, ' '),
+      entity: this.getEntity(r.source) // Keep original entity name for linking
     })).sort((a, b) => b.strength - a.strength);
   },
-  
-  // New methods for enhanced functionality
-  
-  getMarketPhase: function(cyclePosition) {
-    // Determine market phase based on cycle position (0-1 value)
-    if (cyclePosition <= 0.2) return "accumulation";
-    if (cyclePosition <= 0.4) return "early_bull";
-    if (cyclePosition <= 0.6) return "mid_cycle";
-    if (cyclePosition <= 0.8) return "late_bull";
-    return "potential_top";
-  },
-  
-  getRiskAssessment: function(metrics) {
-    // Calculate aggregate risk score based on multiple metrics
-    // metrics object should contain values for known metrics (mvrv, nvt, etc.)
-    let riskScore = 0;
-    let weightSum = 0;
-    
-    // Check and score MVRV
-    if (metrics.mvrv !== undefined) {
-      const weight = 0.35;
-      let score = 0;
-      
-      if (metrics.mvrv > 3.5) score = 0.9;
-      else if (metrics.mvrv > 2.5) score = 0.7;
-      else if (metrics.mvrv > 2) score = 0.5;
-      else if (metrics.mvrv > 1.5) score = 0.3;
-      else if (metrics.mvrv > 1) score = 0.2;
-      else score = 0.1;
-      
-      riskScore += score * weight;
-      weightSum += weight;
-    }
-    
-    // Check and score NVT
-    if (metrics.nvt !== undefined) {
-      const weight = 0.25;
-      let score = 0;
-      
-      if (metrics.nvt > 65) score = 0.8;
-      else if (metrics.nvt > 55) score = 0.6;
-      else if (metrics.nvt > 45) score = 0.4;
-      else if (metrics.nvt > 35) score = 0.3;
-      else score = 0.2;
-      
-      riskScore += score * weight;
-      weightSum += weight;
-    }
-    
-    // Check cycle position
-    if (metrics.cyclePosition !== undefined) {
-      const weight = 0.30;
-      const score = metrics.cyclePosition * 0.9; // Convert 0-1 position to risk score
-      
-      riskScore += score * weight;
-      weightSum += weight;
-    }
-    
-    // Check volatility
-    if (metrics.volatility !== undefined) {
-      const weight = 0.10;
-      let score = 0;
-      
-      if (metrics.volatility > 0.08) score = 0.7;
-      else if (metrics.volatility > 0.05) score = 0.5;
-      else if (metrics.volatility > 0.03) score = 0.3;
-      else score = 0.2;
-      
-      riskScore += score * weight;
-      weightSum += weight;
-    }
-    
-    // Normalize risk score
-    return weightSum > 0 ? (riskScore / weightSum) : 0.5;
-  },
-  
-  getHistoricalComparison: function(metrics) {
-    // Find historical periods with similar metric values
-    // Returns array of similar periods with context
-    const mvrv = metrics.mvrv;
-    const nvt = metrics.nvt;
-    const cyclePosition = metrics.cyclePosition;
-    
-    // This would connect to a database of historical periods
-    // Simplified example:
-    return [
-      {
-        period: "November 2020",
-        similarity: 0.85,
-        context: "Early bull market after recovery from COVID crash",
-        outcome: "Continued 4-month rally of +250% before significant correction"
-      },
-      {
-        period: "April 2019",
-        similarity: 0.72,
-        context: "Recovery from 2018 bear market bottom",
-        outcome: "Sustained uptrend with +180% gains over 3 months"
+
+  getMarketPhase: function(cyclePositionValue) {
+    const cycleEntity = this.entities.market_cycle_position;
+    if (!cycleEntity || !cycleEntity.phases_detailed) return "Unknown";
+
+    for (const phaseName in cycleEntity.phases_detailed) {
+      const phaseData = cycleEntity.phases_detailed[phaseName];
+      if (cyclePositionValue >= phaseData.range_pct[0] && cyclePositionValue <= phaseData.range_pct[1]) {
+        return phaseName.replace(/_/g, ' ');
       }
-    ];
-  },
-  
-  getPriceDeviationSignal: function(currentPrice, movingAverages) {
-    // Calculate how far price has deviated from key moving averages
-    // movingAverages object should contain values for different MAs (e.g., 50-day, 200-day)
-    const signals = {};
-    
-    if (movingAverages.ma50 && movingAverages.ma200) {
-      // Calculate deviation percentages
-      const ma50Deviation = (currentPrice / movingAverages.ma50) - 1;
-      const ma200Deviation = (currentPrice / movingAverages.ma200) - 1;
-      
-      // Generate signals
-      if (ma50Deviation > 0.3) signals.ma50 = "Price significantly above 50-day MA, potential overextension";
-      else if (ma50Deviation < -0.2) signals.ma50 = "Price significantly below 50-day MA, potential oversold condition";
-      
-      if (ma200Deviation > 0.5) signals.ma200 = "Price extremely elevated above 200-day MA, historically unsustainable";
-      else if (ma200Deviation < -0.3) signals.ma200 = "Deep discount to 200-day MA, often indicates capitulation phases";
-      
-      // Golden/Death cross check
-      if (movingAverages.ma50 > movingAverages.ma200 && ma50Deviation < 0.05) 
-        signals.goldencross = "Recent golden cross (50MA crossing above 200MA), historically bullish";
-      else if (movingAverages.ma50 < movingAverages.ma200 && ma50Deviation > -0.05)
-        signals.deathcross = "Recent death cross (50MA crossing below 200MA), historically bearish";
     }
-    
-    return signals;
+    return "Indeterminate";
+  },
+
+  // Example: Get a summary of current risk based on a few key metrics
+  getQuickRiskSnapshot: function(currentMetrics) {
+    // currentMetrics = { MVRV_Ratio: 2.5, NVT_Ratio: 60, market_cycle_position: 0.7 }
+    let messages = [];
+    let overallRiskScore = 0;
+    let factorsConsidered = 0;
+
+    if (currentMetrics.MVRV_Ratio !== undefined) {
+      factorsConsidered++;
+      const mvrv = currentMetrics.MVRV_Ratio;
+      if (mvrv > 3.5) { messages.push("MVRV Ratio is in extreme overvaluation zone."); overallRiskScore += 3; }
+      else if (mvrv > 2.5) { messages.push("MVRV Ratio indicates significant overvaluation."); overallRiskScore += 2; }
+      else if (mvrv < 0.8) { messages.push("MVRV Ratio suggests undervaluation, historically a low-risk zone."); overallRiskScore -= 2; }
+      else { overallRiskScore += 1; }
+    }
+
+    if (currentMetrics.market_cycle_position !== undefined) {
+      factorsConsidered++;
+      const cyclePos = currentMetrics.market_cycle_position;
+      const phase = this.getMarketPhase(cyclePos);
+      messages.push(`Market cycle position is at ${(cyclePos * 100).toFixed(0)}% (${phase}).`);
+      if (cyclePos > 0.8) { overallRiskScore += 3; }
+      else if (cyclePos > 0.6) { overallRiskScore += 2; }
+      else if (cyclePos < 0.2) { overallRiskScore -=2; }
+      else { overallRiskScore += 1; }
+    }
+
+    if (currentMetrics.NUPL !== undefined) {
+        factorsConsidered++;
+        const nupl = currentMetrics.NUPL;
+        if (nupl > 0.75) { messages.push("NUPL indicates Euphoria/Greed, high risk."); overallRiskScore += 3;}
+        else if (nupl > 0.5) { messages.push("NUPL indicates Belief/Denial."); overallRiskScore += 2;}
+        else if (nupl < 0) { messages.push("NUPL indicates Capitulation, potential bottoming."); overallRiskScore -=2;}
+        else { overallRiskScore +=1; }
+    }
+
+    let riskLevel = "Moderate";
+    if (factorsConsidered > 0) {
+        const avgScore = overallRiskScore / factorsConsidered;
+        if (avgScore >= 2.5) riskLevel = "Extreme";
+        else if (avgScore >= 1.8) riskLevel = "High";
+        else if (avgScore <= 0.5) riskLevel = "Low";
+        else if (avgScore <= -1.0) riskLevel = "Very Low";
+    } else {
+        messages.push("Insufficient data for a full risk snapshot.");
+    }
+
+    return {
+        level: riskLevel,
+        summary: messages.join(" "),
+        score_debug: overallRiskScore / (factorsConsidered || 1)
+    };
   }
 };
 
+// Make it available for import in other modules
 export { knowledgeGraph };

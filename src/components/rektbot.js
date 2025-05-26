@@ -299,45 +299,226 @@ function initializeKnowledgeGraph() {
   console.log("Knowledge Graph initialized with current application state");
 }
 
+
 /**
  * Handle donation request intent
  * @param {string} message - User message
  * @returns {Object} Response with text and visual
  */
 function handleDonationRequest(message) {
-  const bitcoinAddress = "bc1qmce5xlnhw3mkd7uk3wd2sdd55f9vjpufdefhp8";
+  // Define all supported cryptocurrency addresses
+  const cryptoAddresses = {
+    BTC: {
+      address: "bc1qmce5xlnhw3mkd7uk3wd2sdd55f9vjpufdefhp8",
+      name: "Bitcoin",
+      symbol: "BTC",
+      color: "#f7931a",
+      qrPrefix: "bitcoin:"
+    },
+    ETH: {
+      address: "0x7aF1e10e2b3a0375DA1B4ca379350B54247D6749",
+      name: "Ethereum",
+      symbol: "ETH",
+      color: "#627eea",
+      qrPrefix: "ethereum:",
+      networks: ["Ethereum", "Base", "Polygon"]
+    },
+    SOL: {
+      address: "FqNV5uKuhUZM6cYEpwirUm8TSZyR4ShgEtoHACfT4ddu",
+      name: "Solana",
+      symbol: "SOL",
+      color: "#9945ff",
+      qrPrefix: "solana:"
+    },
+    SUI: {
+      address: "0x4163af4165b522d888ee1ad7ddf29423492d619e3932351b9718abb04f92e357",
+      name: "Sui",
+      symbol: "SUI", 
+      color: "#4da2ff",
+      qrPrefix: "sui:"
+    }
+  };
   
   // Create visual component
   const visual = document.createElement('div');
   visual.className = 'rektbot-visual';
   
-  // Create donation card with QR code
+  // Create donation interface with multiple cryptocurrencies
   visual.innerHTML = `
-    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Support the Calendar of Rekt</div>
-      
-      <div style="background: rgba(247, 147, 26, 0.1); border: 1px solid var(--btc-orange); border-radius: 5px; padding: 12px; margin-bottom: 15px; word-break: break-all; font-family: monospace; font-size: 0.85rem;">
-        ${bitcoinAddress}
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 20px; border-radius: 12px; margin-top: 15px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-weight: bold; font-size: 1.2rem; margin-bottom: 8px; color: var(--btc-orange);">
+          🙏 Support the Calendar of Rekt
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">
+          Help us continue providing independent Bitcoin market analysis
+        </div>
       </div>
       
-      <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-        <!-- Dynamically generate QR code using an API -->
-        <img 
-          src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(bitcoinAddress)}&size=150x150&color=F7931A" 
-          alt="Bitcoin Address QR Code" 
-          style="max-width: 150px; height: auto; border-radius: 5px;"
-        />
+      <div class="crypto-donation-grid" style="display: grid; gap: 15px;">
+        ${Object.entries(cryptoAddresses).map(([key, crypto]) => `
+          <div class="crypto-donation-card" style="
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid rgba(${hexToRgb(crypto.color)}, 0.3); 
+            border-radius: 8px; 
+            padding: 15px;
+            transition: all 0.3s ease;
+          ">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="
+                  width: 24px; 
+                  height: 24px; 
+                  background: ${crypto.color}; 
+                  border-radius: 50%; 
+                  display: flex; 
+                  align-items: center; 
+                  justify-content: center; 
+                  font-weight: bold; 
+                  font-size: 0.8rem; 
+                  color: white;
+                ">
+                  ${crypto.symbol.charAt(0)}
+                </div>
+                <div>
+                  <div style="font-weight: bold; color: ${crypto.color};">${crypto.name} (${crypto.symbol})</div>
+                  ${crypto.networks ? `
+                    <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 2px;">
+                      ${crypto.networks.join(" • ")}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              <button 
+                class="copy-address-btn" 
+                data-address="${crypto.address}"
+                data-crypto="${crypto.name}"
+                style="
+                  background: rgba(${hexToRgb(crypto.color)}, 0.2); 
+                  border: 1px solid rgba(${hexToRgb(crypto.color)}, 0.4); 
+                  color: ${crypto.color}; 
+                  padding: 4px 8px; 
+                  border-radius: 4px; 
+                  font-size: 0.75rem; 
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                "
+                onmouseover="this.style.background='rgba(${hexToRgb(crypto.color)}, 0.3)'"
+                onmouseout="this.style.background='rgba(${hexToRgb(crypto.color)}, 0.2)'"
+              >
+                Copy
+              </button>
+            </div>
+            
+            <div style="display: flex; gap: 15px; align-items: center;">
+              <div style="flex: 1;">
+                <div style="
+                  background: rgba(255, 255, 255, 0.05); 
+                  border: 1px solid rgba(${hexToRgb(crypto.color)}, 0.3); 
+                  border-radius: 6px; 
+                  padding: 10px; 
+                  word-break: break-all; 
+                  font-family: 'Courier New', monospace; 
+                  font-size: 0.8rem; 
+                  line-height: 1.3;
+                ">
+                  ${crypto.address}
+                </div>
+              </div>
+              
+              <div style="text-align: center;">
+                <img 
+                  src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(crypto.qrPrefix + crypto.address)}&size=80x80&color=${crypto.color.substring(1)}&bgcolor=000000" 
+                  alt="${crypto.name} Address QR Code" 
+                  style="
+                    width: 80px; 
+                    height: 80px; 
+                    border-radius: 4px; 
+                    border: 1px solid rgba(${hexToRgb(crypto.color)}, 0.3);
+                  "
+                  onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(crypto.address)}&size=80x80&color=${crypto.color.substring(1)}&bgcolor=000000'"
+                />
+                <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 4px;">Scan to Pay</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
       </div>
       
-      <div style="font-size: 0.9rem; text-align: center; opacity: 0.8;">
-        Thank you for supporting independent Bitcoin market analysis!
+      <div style="margin-top: 20px; text-align: center; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <div style="font-size: 0.85rem; opacity: 0.7; margin-bottom: 8px;">
+          ✨ Your support helps us maintain independent, data-driven Bitcoin analysis
+        </div>
+        <div style="font-size: 0.8rem; opacity: 0.6;">
+          All donations go directly toward research, development, and maintenance costs
+        </div>
       </div>
     </div>
   `;
   
-  const text = "Thanks for your interest in supporting our work! Here's the Bitcoin address where you can send donations:";
+  // Add copy functionality after the visual is added to DOM
+  setTimeout(() => {
+    const copyButtons = visual.querySelectorAll('.copy-address-btn');
+    copyButtons.forEach(button => {
+      button.addEventListener('click', async function() {
+        const address = this.dataset.address;
+        const cryptoName = this.dataset.crypto;
+        
+        try {
+          await navigator.clipboard.writeText(address);
+          
+          // Visual feedback
+          const originalText = this.textContent;
+          this.textContent = '✓ Copied!';
+          this.style.background = 'rgba(52, 199, 89, 0.3)';
+          this.style.borderColor = 'rgba(52, 199, 89, 0.5)';
+          this.style.color = '#34c759';
+          
+          setTimeout(() => {
+            this.textContent = originalText;
+            const cryptoColor = this.style.color;
+            this.style.background = `rgba(${hexToRgb(cryptoColor)}, 0.2)`;
+            this.style.borderColor = `rgba(${hexToRgb(cryptoColor)}, 0.4)`;
+            this.style.color = cryptoColor;
+          }, 2000);
+          
+        } catch (err) {
+          // Fallback for browsers that don't support clipboard API
+          console.error('Failed to copy address:', err);
+          
+          // Create temporary input element
+          const tempInput = document.createElement('input');
+          tempInput.value = address;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+          
+          // Show feedback
+          this.textContent = '✓ Copied!';
+          setTimeout(() => {
+            this.textContent = 'Copy';
+          }, 2000);
+        }
+      });
+    });
+  }, 100);
+  
+  const text = "Thank you for your interest in supporting the Calendar of Rekt! We accept donations in multiple cryptocurrencies. Choose your preferred option below:";
   
   return { text, visual };
+}
+
+/**
+ * Helper function to convert hex color to RGB values
+ * @param {string} hex - Hex color code
+ * @returns {string} RGB values as comma-separated string
+ */
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? 
+    `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+    '247, 147, 26'; // Default to Bitcoin orange
 }
 
 function handleKnowledgeExplorer(message, sentiment, processedMessage) {
@@ -1197,281 +1378,211 @@ function addBotMessage(message, isHTML = false, isTyping = true) {
 /**
  * Create a visual representation of a knowledge graph concept
  * @param {string} conceptId - ID of the concept in the knowledge graph
- * @param {Object} explanation - Explanation object from knowledge graph
+ * @param {Object} explanation - Explanation object from knowledge graph (contains definition, details etc.)
+ * @param {Array} relatedEntities - Array of related entity objects
  * @returns {HTMLElement} Visual element
  */
-function createConceptVisual(conceptId, explanation) {
+function createConceptVisual(conceptId, explanation, relatedEntities) {
   const visual = document.createElement('div');
   visual.className = 'rektbot-visual';
-  
-  const entity = knowledgeGraph.getEntity(conceptId);
-  
-  if (!entity) return visual;
-  
-  // Different visualization based on entity type
+
+  const entity = knowledgeGraph.getEntity(conceptId); // Get the full entity for its properties
+
+  if (!entity) {
+    visual.innerHTML = `<div style="padding: 10px; color: #aaa;">Details for ${conceptId.replace(/_/g, ' ')} are currently unavailable.</div>`;
+    return visual;
+  }
+
+  let contentHTML = '';
+
+  // --- Main Entity Information ---
+  contentHTML += `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">
+        ${explanation.name ? explanation.name.replace(/_/g, ' ') : conceptId.replace(/_/g, ' ')}
+        <span style="font-size: 0.8em; color: #ccc; margin-left: 10px;">(${entity.type ? entity.type.replace(/_/g, ' ') : 'Concept'})</span>
+      </div>
+      <div style="margin-bottom: 15px; font-size: 0.95rem;">
+        ${explanation.definition || entity.definition || "No definition available."}
+      </div>
+  `;
+
+  // Display calculation summary if available from explanation or entity
+  const calcSummary = (explanation.details && explanation.details.calculation_summary) || entity.calculation_summary;
+  if (calcSummary) {
+    contentHTML += `
+      <div style="margin-bottom: 10px;">
+        <div style="font-weight: bold; font-size: 0.9rem;">Calculation Summary:</div>
+        <div style="font-size: 0.9rem; opacity: 0.8;">${calcSummary}</div>
+      </div>
+    `;
+  }
+
+  // --- Type-Specific Visualizations ---
   switch (entity.type) {
     case 'on-chain_metric':
-      // Create metric explanation visualization
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">${conceptId.replace(/_/g, ' ')} Interpretation</div>
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            ${Object.entries(entity.interpretation || {}).map(([key, value]) => {
-              const thresholdLevel = key.includes('above') ? 'high' : 
-                                    key.includes('below') ? 'low' : 'mid';
-              const color = thresholdLevel === 'high' ? '#ff3b30' : 
-                           thresholdLevel === 'low' ? '#34c759' : '#ffcc00';
-              
-              return `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <div style="width: 60px; text-align: center; font-weight: bold; color: ${color};">
-                    ${key.replace('above_', '> ').replace('below_', '< ').replace('range_', '').replace('_', '-')}
-                  </div>
-                  <div style="flex: 1; background: rgba(${thresholdLevel === 'high' ? '255, 59, 48' : thresholdLevel === 'low' ? '52, 199, 89' : '255, 204, 0'}, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid ${color};">
-                    ${value}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-        
-        ${entity.currentValue !== undefined ? `
-          <div style="margin-top: 15px; background: rgba(30, 30, 30, 0.5); padding: 10px; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-weight: bold;">Current Value:</div>
-              <div style="font-size: 1.1rem; font-weight: bold;">${entity.currentValue.toFixed(2)}</div>
-            </div>
-            ${entity.currentZScore !== undefined ? `
-              <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                <div>Z-Score:</div>
-                <div>${entity.currentZScore.toFixed(2)}</div>
-              </div>
-            ` : ''}
-          </div>
-        ` : ''}
-      `;
-      break;
-      
-    case 'risk_assessment_concept':
-      // Create risk level visualization
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Risk Level Interpretation</div>
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            ${Object.entries(entity.levels || {}).map(([level, description]) => {
-              const color = level === 'extreme' ? '#ff3b30' : 
-                          level === 'high' ? '#ff9500' : 
-                          level === 'moderate' ? '#ffcc00' : 
-                          level === 'low' ? '#90ee90' : '#34c759';
-              
-              return `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <div style="width: 70px; text-align: center; font-weight: bold; color: ${color};">
-                    ${level.charAt(0).toUpperCase() + level.slice(1)}
-                  </div>
-                  <div style="flex: 1; background: rgba(${level === 'extreme' ? '255, 59, 48' : level === 'high' ? '255, 149, 0' : level === 'moderate' ? '255, 204, 0' : level === 'low' ? '144, 238, 144' : '52, 199, 89'}, 0.3); padding: 8px; border-radius: 4px; border-left: 3px solid ${color};">
-                    ${description}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-        
-        <div style="margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Key Influencing Factors</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-            ${knowledgeGraph.getInfluencingFactors(conceptId).map(factor => `
-              <div style="flex: 1; min-width: 140px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border-left: 3px solid rgba(247, 147, 26, ${factor.strength});">
-                <div style="font-weight: bold; margin-bottom: 5px;">${factor.factor.replace(/_/g, ' ')}</div>
-                <div style="font-size: 0.85rem; opacity: 0.8; line-height: 1.3;">${factor.description}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-      break;
-      
-    case 'cycle_concept':
-      // Create cycle visualization
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Market Cycle Position</div>
-          
-          <div style="height: 15px; width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; margin-bottom: 15px; position: relative;">
-            <div style="height: 100%; width: 100%; background: linear-gradient(90deg, #34c759, #ffcc00, #ff9500, #ff3b30); border-radius: 8px;"></div>
-            ${entity.currentValue !== undefined ? `
-              <div style="position: absolute; top: 0; left: ${entity.currentValue * 100}%; transform: translateX(-50%); width: 4px; height: 15px; background: white;"></div>
-              <div style="position: absolute; top: -20px; left: ${entity.currentValue * 100}%; transform: translateX(-50%); color: white; font-weight: bold; font-size: 12px;">${(entity.currentValue * 100).toFixed(0)}%</div>
-            ` : ''}
-          </div>
-          
-          <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-            <span>0% (Cycle Bottom)</span>
-            <span>100% (Cycle Top)</span>
-          </div>
-          
-          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-            ${Object.entries(entity.interpretation || {}).map(([range, description]) => {
-              const [start, end] = range.replace('range_', '').split('_').map(Number);
-              const midpoint = (start + end) / 2;
-              const gradientPos = midpoint / 100;
-              
-              // Calculate colors based on position in cycle
-              const color = gradientPos < 0.25 ? '#34c759' : 
-                          gradientPos < 0.5 ? '#ffcc00' : 
-                          gradientPos < 0.75 ? '#ff9500' : '#ff3b30';
-              
-              return `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <div style="width: 70px; text-align: center; font-weight: bold; color: ${color};">
-                    ${start}-${end}%
-                  </div>
-                  <div style="flex: 1; background: rgba(${gradientPos < 0.25 ? '52, 199, 89' : gradientPos < 0.5 ? '255, 204, 0' : gradientPos < 0.75 ? '255, 149, 0' : '255, 59, 48'}, 0.2); padding: 8px; border-radius: 4px; border-left: 3px solid ${color};">
-                    ${description}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-      break;
-      
-    case 'network_event':
-      // Create event visualization
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">${conceptId.replace(/_/g, ' ').charAt(0).toUpperCase() + conceptId.replace(/_/g, ' ').slice(1)}</div>
-          
-          <div style="margin-bottom: 15px;">
-            <div style="font-weight: bold; margin-bottom: 5px;">Historical Dates:</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              ${entity.historical_dates.map(date => `
-                <div style="background: rgba(247, 147, 26, 0.2); border: 1px solid rgba(247, 147, 26, 0.5); border-radius: 4px; padding: 5px 10px;">${date}</div>
-              `).join('')}
-            </div>
-          </div>
-          
-          <div style="margin-bottom: 10px;">
-            <div style="font-weight: bold; margin-bottom: 5px;">Market Impact:</div>
-            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
-              ${entity.market_impact}
-            </div>
-          </div>
-          
-          <div>
-            <div style="font-weight: bold; margin-bottom: 5px;">Related Concepts:</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              ${entity.relates_to.map(concept => `
-                <div style="background: rgba(50, 50, 50, 0.5); border-radius: 4px; padding: 5px 10px; font-size: 0.9rem;">${concept.replace(/_/g, ' ')}</div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-      `;
-      break;
-      
-    case 'market_condition':
-      // Create market condition visualization
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">${conceptId.replace(/_/g, ' ').charAt(0).toUpperCase() + conceptId.replace(/_/g, ' ').slice(1)}</div>
-          
-          <div style="margin-bottom: 15px; font-size: 0.95rem;">
-            ${entity.definition}
-          </div>
-          
-          <div style="margin-bottom: 15px;">
-            <div style="font-weight: bold; margin-bottom: 5px;">Characterized By:</div>
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-              ${entity.characterized_by.map(trait => `
-                <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; font-size: 0.9rem;">
-                  • ${trait.replace(/_/g, ' ')}
-                </div>
-              `).join('')}
-            </div>
-          </div>
-          
-          ${entity.average_duration_days ? `
-            <div style="display: flex; align-items: center; gap: 10px; background: rgba(247, 147, 26, 0.1); padding: 10px; border-radius: 6px; border-left: 3px solid var(--btc-orange);">
-              <div style="font-weight: bold;">Average Duration:</div>
-              <div>${entity.average_duration_days} days (~${(entity.average_duration_days / 365).toFixed(1)} years)</div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-      break;
-      
     case 'market_metric':
-      // Create market metric visualization (similar to on-chain metric but with some differences)
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">${conceptId.replace(/_/g, ' ')} Explained</div>
-          
-          <div style="margin-bottom: 15px; font-size: 0.95rem;">
-            ${entity.definition}
-          </div>
-          
-          ${entity.thresholds ? `
-            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-              <div style="margin-bottom: 5px; font-weight: bold;">Typical Thresholds:</div>
-              <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                <div>
-                  <span style="font-weight: bold; color: #34c759;">Low:</span> 
-                  <span>${entity.thresholds.low}${entity.thresholds.low < 0.1 ? ' (low volatility)' : ''}</span>
-                </div>
-                <div>
-                  <span style="font-weight: bold; color: #ff3b30;">High:</span> 
-                  <span>${entity.thresholds.high}${entity.thresholds.high > 0.1 ? ' (high volatility)' : ''}</span>
-                </div>
+      if (entity.interpretation) {
+        contentHTML += `<div style="font-weight: bold; margin-bottom: 8px; margin-top:10px; color: var(--btc-orange);">Interpretation Levels:</div>`;
+        contentHTML += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        Object.entries(entity.interpretation).forEach(([key, value]) => {
+          const thresholdLevel = key.includes('above') || key.includes('extreme') || key.includes('overvaluation') ? 'high' :
+                                 key.includes('below') || key.includes('undervaluation') || key.includes('low') ? 'low' : 'mid';
+          const color = thresholdLevel === 'high' ? '#ff3b30' :
+                       thresholdLevel === 'low' ? '#34c759' : '#ffcc00';
+          contentHTML += `
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <div style="width: 100px; text-align: left; font-weight: bold; color: ${color}; font-size: 0.85rem; flex-shrink: 0;">
+                ${key.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase())}
+              </div>
+              <div style="flex: 1; background: rgba(${thresholdLevel === 'high' ? '255, 59, 48' : thresholdLevel === 'low' ? '52, 199, 89' : '255, 204, 0'}, 0.15); padding: 8px; border-radius: 4px; border-left: 3px solid ${color}; font-size: 0.9rem;">
+                ${value}
               </div>
             </div>
-          ` : ''}
-          
-          <div style="margin-top: 15px;">
-            <div style="font-weight: bold; margin-bottom: 5px;">Related Concepts:</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              ${entity.relates_to.map(concept => `
-                <div style="background: rgba(50, 50, 50, 0.5); border-radius: 4px; padding: 5px 10px; font-size: 0.9rem;">${concept.replace(/_/g, ' ')}</div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-      `;
+          `;
+        });
+        contentHTML += '</div>';
+      }
+      if (entity.thresholds) {
+        contentHTML += `<div style="font-weight: bold; margin-bottom: 5px; margin-top:10px; color: var(--btc-orange);">Key Thresholds:</div>`;
+        contentHTML += '<ul style="margin: 0; padding-left: 20px; list-style-type: disc;">';
+        for (const [key, value] of Object.entries(entity.thresholds)) {
+             contentHTML += `<li style="font-size:0.9rem; margin-bottom: 4px;"><strong>${key.replace(/_/g, ' ')}:</strong> ${typeof value === 'object' ? JSON.stringify(value) : value}</li>`;
+        }
+        contentHTML += '</ul>';
+      }
+      if (entity.currentValue !== undefined && entity.currentValue !== null) {
+        contentHTML += `<div style="margin-top:10px; font-size:0.9rem;"><strong>Current Value:</strong> ${entity.currentValue.toFixed ? entity.currentValue.toFixed(2) : entity.currentValue}</div>`;
+      }
+      if (entity.currentZScore !== undefined && entity.currentZScore !== null) {
+        contentHTML += `<div style="font-size:0.9rem;"><strong>Current Z-Score:</strong> ${entity.currentZScore.toFixed(2)}</div>`;
+      }
       break;
-      
+
+    case 'risk_assessment_concept':
+      if (entity.levels) {
+        contentHTML += `<div style="font-weight: bold; margin-bottom: 8px; margin-top:10px; color: var(--btc-orange);">Risk Levels:</div>`;
+        contentHTML += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        Object.entries(entity.levels).forEach(([level, data]) => {
+            const description = typeof data === 'string' ? data : (data.description || "No description.");
+            const color = level.includes('extreme') ? '#ff3b30' : level.includes('high') ? '#ff9500' : level.includes('low') || level.includes('very_low') ? '#34c759' : '#ffcc00';
+            contentHTML += `
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="width: 100px; text-align: left; font-weight: bold; color: ${color}; font-size: 0.85rem; flex-shrink: 0;">
+                        ${level.replace(/_/g, ' ').toUpperCase()}
+                    </div>
+                    <div style="flex: 1; background: rgba(${color === '#ff3b30' ? '255,59,48' : color === '#ff9500' ? '255,149,0' : color === '#34c759' ? '52,199,89' : '255,204,0'}, 0.15); padding: 8px; border-radius: 4px; border-left: 3px solid ${color}; font-size: 0.9rem;">
+                        ${description}
+                    </div>
+                </div>
+            `;
+        });
+        contentHTML += '</div>';
+      }
+      if (entity.historical_indicators && entity.historical_indicators.reliable_top_signals) {
+         contentHTML += `<div style="font-weight: bold; margin-top:10px; margin-bottom: 5px; color: var(--btc-orange);">Historical Top Signals:</div><ul style="margin: 0; padding-left: 20px; list-style-type: disc;">${entity.historical_indicators.reliable_top_signals.map(s => `<li style="font-size:0.9rem; margin-bottom: 4px;">${s}</li>`).join('')}</ul>`;
+      }
+      break;
+
+    case 'cycle_concept': // e.g., market_cycle_position
+      if (entity.phases_detailed) {
+        contentHTML += `<div style="font-weight: bold; margin-bottom: 8px; margin-top:10px; color: var(--btc-orange);">Market Cycle Phases:</div>`;
+        contentHTML += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        Object.entries(entity.phases_detailed).forEach(([phaseName, phaseData]) => {
+            const rangeText = phaseData.range_pct ? `(${(phaseData.range_pct[0]*100).toFixed(0)}% - ${(phaseData.range_pct[1]*100).toFixed(0)}%)` : '';
+            contentHTML += `
+                <div style="padding: 10px; background: rgba(50,50,50,0.15); border-left: 3px solid var(--btc-orange-muted, #FFA500); border-radius: 4px;">
+                    <div style="font-weight:bold; font-size:0.95rem; margin-bottom: 5px;">${phaseName.replace(/_/g, ' ').toUpperCase()} ${rangeText}</div>
+                    <div style="font-size:0.9rem; opacity:0.9; margin-bottom: 5px;">${phaseData.description}</div>
+                    ${phaseData.indicators ? `<div style="font-size:0.85rem; margin-top:5px;"><em>Key Indicators: ${phaseData.indicators.join(', ')}</em></div>` : ''}
+                </div>
+            `;
+        });
+        contentHTML += '</div>';
+      }
+      if (entity.currentValue !== undefined && entity.currentValue !== null) {
+        contentHTML += `<div style="margin-top:15px; font-size:0.95rem; font-weight:bold;">Current Cycle Position: <span style="color: var(--btc-orange);">${(entity.currentValue * 100).toFixed(0)}%</span></div>`;
+      }
+      break;
+
+    case 'network_event': // e.g., halving
+      if (entity.historical_dates) {
+        contentHTML += `<div style="font-weight: bold; margin-top:10px; margin-bottom: 5px; color: var(--btc-orange);">Historical Dates:</div><p style="font-size:0.9rem; margin:0;">${entity.historical_dates.join(', ')}</p>`;
+      }
+      if (entity.market_impact_theory) {
+        contentHTML += `<div style="font-weight: bold; margin-top:10px; margin-bottom: 5px; color: var(--btc-orange);">Market Impact Theory:</div><p style="font-size:0.9rem; margin:0;">${entity.market_impact_theory}</p>`;
+      }
+      break;
+
+    case 'market_condition': // e.g., bull_market
+        if(entity.characterized_by) {
+            contentHTML += `<div style="font-weight: bold; margin-top:10px; margin-bottom: 5px; color: var(--btc-orange);">Characterized By:</div><ul style="margin: 0; padding-left: 20px; list-style-type: disc;">${entity.characterized_by.map(c => `<li style="font-size:0.9rem; margin-bottom: 4px;">${c}</li>`).join('')}</ul>`;
+        }
+        if(entity.average_duration_days_btc) {
+            contentHTML += `<p style="font-size:0.9rem; margin-top:10px;"><strong>Average Duration:</strong> ~${entity.average_duration_days_btc} days</p>`;
+        }
+        break;
+    
+    case 'easter_egg': // For the cheesecake!
+        if (entity.recipe && entity.recipe.title) {
+            contentHTML += `<div style="font-weight: bold; margin-top:10px; margin-bottom: 5px; color: var(--btc-orange);">${entity.recipe.title}</div>`;
+            if (entity.recipe.ingredients) {
+                contentHTML += `<div style="font-weight: bold; font-size:0.9rem; margin-top:10px;">Ingredients:</div><ul style="margin: 0; padding-left: 20px; list-style-type: disc;">${entity.recipe.ingredients.map(ing => `<li style="font-size:0.85rem; margin-bottom:3px;">${ing}</li>`).join('')}</ul>`;
+            }
+            if (entity.recipe.instructions) {
+                contentHTML += `<div style="font-weight: bold; font-size:0.9rem; margin-top:10px;">Instructions:</div><ol style="margin: 0; padding-left: 20px;">${entity.recipe.instructions.map(step => `<li style="font-size:0.85rem; margin-bottom:3px;">${step}</li>`).join('')}</ol>`;
+            }
+            if (entity.recipe.serving_instructions) {
+                contentHTML += `<p style="font-style:italic; font-size:0.85rem; margin-top:10px;">${entity.recipe.serving_instructions}</p>`;
+            }
+        }
+        break;
+
     default:
-      // Generic visualization for other entity types
-      visual.innerHTML = `
-        <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">
-            ${conceptId.replace(/_/g, ' ').charAt(0).toUpperCase() + conceptId.replace(/_/g, ' ').slice(1)}
-          </div>
-          
-          <div style="margin-bottom: 15px; font-size: 0.95rem;">
-            ${entity.definition}
-          </div>
-          
-          ${entity.relates_to ? `
-            <div>
-              <div style="font-weight: bold; margin-bottom: 5px;">Related Concepts:</div>
-              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                ${entity.relates_to.map(concept => `
-                  <div style="background: rgba(50, 50, 50, 0.5); border-radius: 4px; padding: 5px 10px; font-size: 0.9rem;">
-                    ${concept.replace(/_/g, ' ')}
-                  </div>
-                `).join('')}
-              </div>
+      // Generic display for other types or if no specific visualization is defined
+      if (entity.relates_to && entity.relates_to.length > 0) {
+        contentHTML += `
+          <div style="margin-top: 10px;">
+            <div style="font-weight: bold; font-size: 0.9rem;">Directly Relates To:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+              ${entity.relates_to.slice(0, 5).map(rel => `<span style="background: rgba(255,255,255,0.1); padding: 3px 7px; border-radius: 3px; font-size: 0.85rem;">${rel.replace(/_/g, ' ')}</span>`).join('')}
             </div>
-          ` : ''}
-        </div>
-      `;
+          </div>
+        `;
+      }
+      break;
   }
-  
+  contentHTML += `</div>`; // Close main entity info block
+
+  // --- Key Relationships Section (from previous update) ---
+  if (relatedEntities && relatedEntities.length > 0) {
+    contentHTML += `
+      <div style="margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px;">
+        <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Key Relationships:</div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem; list-style-type: disc;">
+          ${relatedEntities.slice(0, 3).map(rel => {
+            let relDesc = rel.description ? `(${rel.description.substring(0, 70)}...)` : '';
+            // Ensure rel.name and rel.relationship are defined
+            const relName = rel.name ? rel.name.replace(/_/g, ' ') : 'an unknown concept';
+            const relRelationship = rel.relationship ? rel.relationship.replace(/_/g, ' ') : 'is related to';
+            return `
+              <li style="margin-bottom: 8px;">
+                <strong>${relName}:</strong> 
+                ${relRelationship} 
+                ${relDesc}
+              </li>
+            `;
+          }).join('')}
+        </ul>
+      </div>
+    `;
+  }
+  // --- End of Key Relationships Section ---
+
+  visual.innerHTML = contentHTML;
   return visual;
 }
+
 
 /**
  * Process a user message and generate a response
@@ -5771,55 +5882,63 @@ function createRiskDisplay(percentage) {
 function handleEducationalQuery(message, sentiment, processedMessage) {
   // Extract the topic from entities or message
   const entities = processedMessage.entities;
-  let topic = '';
-  
+  let topic = ''; // Default topic
+  let visual = null; // Initialize visual to null
+
   // Check if we have a knowledge graph concept entity
-  if (entities.concept) {
+  if (entities.concept && entities.concept.id) { // Ensure concept.id exists
     // Use knowledge graph for explanation
     const conceptId = entities.concept.id;
-    const userLevel = conversationContext.userProfile.knowledgeLevel;
-    
+    const userLevel = conversationContext.userProfile.knowledgeLevel || "intermediate"; // Default if undefined
+
     const explanation = knowledgeGraph.explainEntity(conceptId, userLevel);
-    
+    const relatedEntities = knowledgeGraph.getRelatedEntities(conceptId); // Fetch related entities
+
     if (explanation) {
-      // Create visual element based on concept type
-      const visual = createConceptVisual(conceptId, explanation);
-      
+      // Create visual element based on concept type, now passing relatedEntities
+      visual = createConceptVisual(conceptId, explanation, relatedEntities); // Pass relatedEntities
+
       // Generate text explanation
-      let text = `${explanation.name.replace(/_/g, ' ')} is ${explanation.definition} `;
-      
-      // Add relationship details for relevant concepts
-      if (conceptId === 'crash_risk') {
-        const influencingFactors = knowledgeGraph.getInfluencingFactors(conceptId);
-        
-        if (influencingFactors && influencingFactors.length >= 2) {
-          text += `It's influenced by several factors, with ${influencingFactors[0].factor.replace(/_/g, ' ')} and ${influencingFactors[1].factor.replace(/_/g, ' ')} being the most significant.`;
-        }
-      } else if (explanation.interpretation) {
-        // Add interpretation for metrics
-        text += `When analyzing this metric, `;
-        
-        if (conceptId === 'MVRV_Ratio') {
-          text += `values above 3.5 historically indicate market tops, while values below 1 often represent good accumulation opportunities.`;
-        } else if (conceptId === 'NVT_Ratio') {
-          text += `high values (above 65) suggest potential overvaluation, while low values (below 30) may indicate undervaluation relative to network activity.`;
-        } else if (conceptId === 'market_cycle_position') {
-          text += `values below 20% represent early cycle accumulation phases, while values above 80% often indicate increased risk of market corrections.`;
-        } else {
-          // Generic interpretation for other metrics
-          text += `it's important to consider both the current value and recent trends to gauge market conditions.`;
+      let text = `${explanation.name ? explanation.name.replace(/_/g, ' ') : conceptId.replace(/_/g, ' ')} is ${explanation.definition || 'a concept in the knowledge graph.'} `;
+
+      // Add interpretation for metrics (existing logic)
+      if (explanation.interpretation_summary) {
+         text += `Key interpretations include: ${explanation.interpretation_summary}. `;
+      } else if (explanation.details && explanation.details.interpretation_levels) {
+        // Fallback if interpretation_summary is not directly available
+        const interpretations = Object.entries(explanation.details.interpretation_levels)
+            .slice(0,2) // Take first two for brevity
+            .map(([level, desc]) => `${level.replace(/_/g, ' ')}: "${desc.substring(0,70)}..."`)
+            .join('; ');
+        if (interpretations) {
+            text += `For example, ${interpretations}. `;
         }
       }
-      
+
+
+      // Add relationship details from relatedEntities
+      if (relatedEntities && relatedEntities.length > 0) {
+        text += "\n\nThis concept is closely related to: ";
+        const topRelations = relatedEntities.slice(0, 3); // Show top 3 relations
+        text += topRelations.map(rel => {
+          let relDesc = rel.description ? `(${rel.description.substring(0, 50)}...)` : '';
+          // Ensure rel.name and rel.relationship are defined before trying to replace/use them
+          const relName = rel.name ? rel.name.replace(/_/g, ' ') : 'an unknown concept';
+          const relRelationship = rel.relationship ? rel.relationship.replace(/_/g, ' ') : 'related to';
+          return `\n- **${relName}**: It ${relRelationship} ${conceptId.replace(/_/g, ' ')} ${relDesc}`;
+        }).join("");
+      }
+
       return {
         text: text,
-        visual: visual
+        visual: visual // visual will be populated by createConceptVisual
       };
     }
   }
-  
-  // Fall back to original implementation if concept not found
-  if (entities.metric) {
+
+  // Fall back to original implementation if concept not found or no specific KG entity
+  // This part of your original function can remain if you have other ways to determine topics
+  if (entities.metric && entities.metric.mentioned) { // Ensure metric.mentioned exists
     topic = entities.metric.mentioned;
   } else if (/\b(model|calculation|algorithm)\b/i.test(message)) {
     topic = 'risk model';
@@ -5828,46 +5947,51 @@ function handleEducationalQuery(message, sentiment, processedMessage) {
   } else if (/\b(cycle|halving)\b/i.test(message)) {
     topic = 'market cycle';
   } else {
+    // If no specific topic is identified from entities or keywords,
+    // try to find the most relevant general topic based on the message.
+    // For now, we'll default to 'risk calculation' if nothing else fits.
     topic = 'risk calculation';
   }
-  
+
   // Adjust explanation detail based on user knowledge level
-  const userLevel = conversationContext.userProfile.knowledgeLevel;
-  
+  const userLevel = conversationContext.userProfile.knowledgeLevel || "intermediate";
+
   // Create educational content
-  let explanation = '';
-  let visual = null;
-  
+  let explanationText = ''; // Renamed from 'explanation' to avoid conflict
+
   switch(topic.toLowerCase()) {
     case 'risk model':
-      explanation = generateModelExplanation(userLevel);
+      explanationText = generateModelExplanation(userLevel);
       visual = createModelVisual();
       break;
     case 'mvrv':
-      explanation = generateMVRVExplanation(userLevel);
+      explanationText = generateMVRVExplanation(userLevel);
       visual = createMetricVisual('MVRV');
       break;
     case 'nvt':
-      explanation = generateNVTExplanation(userLevel);
+      explanationText = generateNVTExplanation(userLevel);
       visual = createMetricVisual('NVT');
       break;
     case 'seasonality':
-      explanation = "Bitcoin shows seasonal patterns in risk and volatility. The Calendar of Rekt analyzes these patterns to identify months with historically higher crash probabilities. Seasonality is one of several factors used in the model to generate risk assessments.";
+      explanationText = "Bitcoin shows seasonal patterns in risk and volatility. The Calendar of Rekt analyzes these patterns to identify months with historically higher crash probabilities. Seasonality is one of several factors used in the model to generate risk assessments.";
       visual = createSeasonalityVisual();
       break;
     case 'market cycle':
-      explanation = "Bitcoin tends to move in cyclical patterns. These cycles often correlate with the halving events, which occur approximately every four years. The market cycle is divided into phases, from early accumulation (0-20%) to euphoria and market tops (80-100%).";
+      explanationText = "Bitcoin tends to move in cyclical patterns. These cycles often correlate with the halving events, which occur approximately every four years. The market cycle is divided into phases, from early accumulation (0-20%) to euphoria and market tops (80-100%).";
       visual = createMarketCycleVisual();
       break;
-    default:
-      explanation = generateGeneralExplanation(userLevel);
+    default: // 'risk calculation' or any other fallback
+      explanationText = generateGeneralExplanation(userLevel);
+      // No specific visual for general explanation, or you can create one
+      visual = null;
   }
-  
+
   return {
-    text: explanation,
+    text: explanationText,
     visual: visual
   };
 }
+
 
 /**
  * Helper functions for educational content
