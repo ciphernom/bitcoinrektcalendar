@@ -112,6 +112,32 @@ const REKTBOT_CONFIG = {
   ]
 };
 
+
+// Additional constants for enhanced functionality
+const CLARIFICATION_CONFIDENCE_THRESHOLD = 0.65;
+const MAX_CLARIFICATION_CHIPS = 4;
+const CHART_CREATION_DELAY = 200; // ms delay for chart creation
+
+// Enhanced avatar moods
+const AVATAR_MOODS = {
+  BULLISH: 'avatar-mood-bullish',
+  BEARISH: 'avatar-mood-bearish', 
+  NEUTRAL: 'avatar-mood-neutral',
+  THINKING: 'avatar-mood-thinking',
+  ALERT: 'avatar-mood-alert'
+};
+
+// Intent confidence thresholds for clarification
+const INTENT_CONFIDENCE_THRESHOLDS = {
+  HIGH: 0.80,
+  MEDIUM: 0.50,
+  LOW: 0.30
+};
+
+const FUZZY_MATCH_THRESHOLD = 0.70; // For typo indication - NLU might have its own for matching
+
+
+
 // Bot state - scoped to this module
 const botState = {
   conversationHistory: [],
@@ -298,6 +324,409 @@ function initializeKnowledgeGraph() {
   
   console.log("Knowledge Graph initialized with current application state");
 }
+/**
+ * Routes the request to the appropriate intent handler.
+ * @param {string} intentName - The name of the intent to handle.
+ * @param {string} originalMessage - The original user message text.
+ * @param {any} sentiment - The sentiment of the original message.
+ * @param {Object} nluOutput - The NLU processing output (passed as processedMessage to handlers).
+ * @returns {Object|null} Response object { text, visual } from the handler, or null.
+ */
+function routeToHandler(intentName, originalMessage, sentiment, nluOutput) {
+    // The nluOutput from enhancedNLU.processMessage() is passed as 'processedMessage' to handlers
+    // It contains: { primary: { intent, confidence, entities, concept, ... }, alternatives: [...], ... }
+
+    let handlerFunction;
+
+    switch (intentName) {
+        case 'risk_assessment':
+            handlerFunction = handleRiskAssessment;
+            break;
+        case 'strategy_advice':
+            handlerFunction = handleStrategyAdvice;
+            break;
+        case 'metric_analysis':
+            handlerFunction = handleMetricAnalysis;
+            break;
+        case 'market_prediction':
+            handlerFunction = handleMarketPrediction;
+            break;
+        case 'scenario_simulation':
+            handlerFunction = handleScenarioSimulation;
+            break;
+        case 'historical_comparison':
+            handlerFunction = handleHistoricalComparison;
+            break;
+        case 'educational':
+            handlerFunction = handleEducationalQuery;
+            break;
+        case 'knowledge_explorer':
+            handlerFunction = handleKnowledgeExplorer;
+            break;
+        case 'donation_request':
+            handlerFunction = handleDonationRequest;
+            break;
+        case 'cheesecake_request': // Easter egg from existing code
+            handlerFunction = handleCheesecakeRequest;
+            break;
+        case 'market_structure':
+             // Assuming you'll create this handler based on NLU patterns
+            handlerFunction = handleMarketStructureAnalysis; // Placeholder
+            break;
+        case 'sentiment_analysis':
+            handlerFunction = handleSentimentAnalysis; // Placeholder
+            break;
+        case 'black_swan_analysis':
+            handlerFunction = handleBlackSwanAnalysis; // Placeholder
+            break;
+        case 'general_query': // Fallback intent from NLU
+        default:
+            handlerFunction = handleGenericResponse;
+            break;
+    }
+
+    if (typeof handlerFunction === 'function') {
+        try {
+            // Call the handler, passing the full nluOutput as processedMessage
+            return handlerFunction(originalMessage, sentiment, nluOutput);
+        } catch (error) {
+            console.error(`Error in handler for intent "${intentName}":`, error);
+            return handleGenericResponse(originalMessage, sentiment, { primary: { intent: 'error_occurred', confidence: 1.0, entities: {} }, entities: {} });
+        }
+    } else {
+        console.warn(`No handler found for intent: ${intentName}`);
+        return handleGenericResponse(originalMessage, sentiment, { primary: { intent: 'unhandled_intent', confidence: 1.0, entities: {} }, entities: {} });
+    }
+}
+
+/**
+ * Handle market structure analysis intent
+ * @param {string} message - User message
+ * @param {number} sentiment - Message sentiment
+ * @param {Object} processedMessage - Processed message with entities
+ * @returns {Object} Response with text and visual
+ */
+function handleMarketStructureAnalysis(message, sentiment, processedMessage) {
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  // Get current price and technical levels
+  const currentPrice = state.bitcoinData[state.bitcoinData.length - 1].price;
+  const technicalLevel = processedMessage.entities.technicalLevel;
+  
+  visual.innerHTML = `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Market Structure Analysis</div>
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Current Price Structure:</div>
+        <div style="font-size: 0.9rem;">Current Price: $${currentPrice.toLocaleString()}</div>
+        ${technicalLevel ? `
+          <div style="font-size: 0.9rem; margin-top: 5px;">
+            Referenced Level: ${technicalLevel.levels ? technicalLevel.levels[0].formatted : 'N/A'}
+          </div>
+        ` : ''}
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Key Technical Levels:</div>
+        <div style="font-size: 0.9rem;">
+          • Support: Strong buying interest historically found around major psychological levels
+          • Resistance: Selling pressure often emerges at previous highs and round numbers
+          • Trend: Current market structure suggests ${currentPrice > 50000 ? 'bullish' : 'neutral'} bias
+        </div>
+      </div>
+      
+      <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+        <div style="font-size: 0.9rem; font-style: italic;">
+          Technical analysis requires real-time chart data for accurate level identification. 
+          Consider consulting TradingView or similar platforms for detailed technical analysis.
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const text = `Current market structure shows Bitcoin trading at $${currentPrice.toLocaleString()}. Technical analysis requires examination of support/resistance levels, trend direction, and volume patterns for comprehensive structure assessment.`;
+  
+  return { text, visual };
+}
+
+/**
+ * Handle sentiment analysis intent
+ * @param {string} message - User message
+ * @param {number} sentiment - Message sentiment
+ * @param {Object} processedMessage - Processed message with entities
+ * @returns {Object} Response with text and visual
+ */
+function handleSentimentAnalysis(message, sentiment, processedMessage) {
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  // Get sentiment indicator from entities
+  const sentimentIndicator = processedMessage.entities.sentimentIndicator;
+  const currentRisk = getCurrentRisk();
+  
+  visual.innerHTML = `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Market Sentiment Analysis</div>
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Current Risk-Based Sentiment:</div>
+        <div style="font-size: 0.9rem;">
+          Risk Level: ${getCurrentRiskLevel()} (${(currentRisk * 100).toFixed(1)}%)
+        </div>
+        <div style="font-size: 0.9rem; margin-top: 5px;">
+          Sentiment Implication: ${getSentimentFromRisk(currentRisk)}
+        </div>
+      </div>
+      
+      ${sentimentIndicator ? `
+        <div style="margin-bottom: 15px;">
+          <div style="font-weight: bold; margin-bottom: 8px;">Specific Indicator Analysis:</div>
+          <div style="font-size: 0.9rem;">
+            Indicator: ${sentimentIndicator.indicator || sentimentIndicator.sentiment || 'General Sentiment'}
+            ${sentimentIndicator.value ? `<br>Value: ${(sentimentIndicator.value * 100).toFixed(0)}%` : ''}
+          </div>
+        </div>
+      ` : ''}
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Sentiment Factors:</div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+          <li>On-chain metrics suggest ${currentRisk > 0.6 ? 'caution' : currentRisk < 0.4 ? 'opportunity' : 'balanced outlook'}</li>
+          <li>Risk assessment indicates ${getCurrentRiskLevel().toLowerCase()} market stress</li>
+          <li>Historical patterns show similar conditions often lead to ${getHistoricalSentimentOutcome(currentRisk)}</li>
+        </ul>
+      </div>
+      
+      <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+        <div style="font-size: 0.9rem; font-style: italic;">
+          Sentiment analysis combines quantitative risk metrics with qualitative market indicators. 
+          Individual sentiment can differ significantly from aggregate market sentiment.
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const text = `Current market sentiment analysis suggests ${getSentimentFromRisk(currentRisk).toLowerCase()} conditions based on ${getCurrentRiskLevel().toLowerCase()} risk levels. ${sentimentIndicator ? `The ${sentimentIndicator.indicator || 'sentiment indicator'} you mentioned provides additional context for market psychology assessment.` : ''}`;
+  
+  return { text, visual };
+}
+
+/**
+ * Handle black swan analysis intent
+ * @param {string} message - User message
+ * @param {number} sentiment - Message sentiment
+ * @param {Object} processedMessage - Processed message with entities
+ * @returns {Object} Response with text and visual
+ */
+function handleBlackSwanAnalysis(message, sentiment, processedMessage) {
+  const visual = document.createElement('div');
+  visual.className = 'rektbot-visual';
+  
+  const blackSwan = processedMessage.entities.blackSwan;
+  const currentRisk = getCurrentRisk();
+  
+  visual.innerHTML = `
+    <div style="background: rgba(30, 30, 30, 0.7); padding: 15px; border-radius: 10px; margin-top: 15px;">
+      <div style="font-weight: bold; margin-bottom: 10px; color: var(--btc-orange);">Black Swan Risk Analysis</div>
+      
+      ${blackSwan ? `
+        <div style="margin-bottom: 15px;">
+          <div style="font-weight: bold; margin-bottom: 8px;">Specific Event Analysis:</div>
+          <div style="font-size: 0.9rem;">
+            Event Type: ${blackSwan.event.replace(/_/g, ' ').toUpperCase()}
+            <br>Category: ${blackSwan.type} ${blackSwan.type === 'historical' ? 'event' : 'risk'}
+          </div>
+        </div>
+      ` : ''}
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Current Tail Risk Assessment:</div>
+        <div style="font-size: 0.9rem;">
+          Base Risk Level: ${(currentRisk * 100).toFixed(1)}% (${getCurrentRiskLevel()})
+          <br>Black Swan Multiplier: ${getBlackSwanMultiplier(currentRisk)}x
+          <br>Extreme Event Probability: ${(currentRisk * getBlackSwanMultiplier(currentRisk) * 100).toFixed(1)}%
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Historical Black Swan Events:</div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+          <li><strong>COVID-19 Crash (March 2020):</strong> 50% drop in 24 hours</li>
+          <li><strong>FTX Collapse (November 2022):</strong> Contagion-driven 25% decline</li>
+          <li><strong>Luna/Terra Collapse (May 2022):</strong> Algorithmic stablecoin failure</li>
+          <li><strong>China Mining Ban (May 2021):</strong> Regulatory shock, 50% hash rate drop</li>
+        </ul>
+      </div>
+      
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Mitigation Strategies:</div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem;">
+          <li>Maintain appropriate position sizing (never risk more than you can afford to lose)</li>
+          <li>Diversify across multiple assets and strategies</li>
+          <li>Use stop-losses and hedging for large positions</li>
+          <li>Keep cash reserves for opportunities during extreme volatility</li>
+          <li>Avoid excessive leverage, especially during uncertain periods</li>
+        </ul>
+      </div>
+      
+      <div style="background: rgba(255, 59, 48, 0.1); padding: 10px; border-radius: 6px; border-left: 3px solid #ff3b30;">
+        <div style="font-size: 0.9rem; font-weight: bold; color: #ff3b30;">
+          ⚠️ Black Swan Warning
+        </div>
+        <div style="font-size: 0.85rem; margin-top: 5px;">
+          By definition, black swan events are unpredictable and can occur regardless of current risk levels. 
+          Historical analysis and risk models cannot fully protect against unprecedented events.
+        </div>
+      </div>
+    </div>
+  `;
+  
+  let text = `Black swan analysis suggests `;
+  
+  if (blackSwan) {
+    if (blackSwan.type === 'historical') {
+      text += `the ${blackSwan.event.replace(/_/g, ' ')} was a significant tail risk event that demonstrates how quickly market conditions can change. `;
+    } else {
+      text += `general black swan risks remain a constant concern in volatile markets like Bitcoin. `;
+    }
+  } else {
+    text += `current tail risk levels are elevated by a factor of ${getBlackSwanMultiplier(currentRisk)}x beyond the base ${(currentRisk * 100).toFixed(1)}% risk assessment. `;
+  }
+  
+  text += `While these extreme events are unpredictable by nature, maintaining proper risk management and position sizing remains the best defense against potential black swan scenarios.`;
+  
+  return { text, visual };
+}
+
+
+/**
+ * Get sentiment description from risk level
+ * @param {number} risk - Risk value (0-1)
+ * @returns {string} Sentiment description
+ */
+function getSentimentFromRisk(risk) {
+  if (risk > 0.8) return "Extreme Fear/Greed (market at extremes)";
+  if (risk > 0.6) return "High Anxiety/Uncertainty";
+  if (risk > 0.4) return "Cautious Optimism";
+  if (risk > 0.2) return "Measured Confidence";
+  return "Strong Conviction/Accumulation Phase";
+}
+
+/**
+ * Get historical sentiment outcome
+ * @param {number} risk - Risk value (0-1)
+ * @returns {string} Historical outcome description
+ */
+function getHistoricalSentimentOutcome(risk) {
+  if (risk > 0.8) return "significant corrections within 1-3 months";
+  if (risk > 0.6) return "increased volatility and potential pullbacks";
+  if (risk > 0.4) return "consolidation with mixed directional moves";
+  if (risk > 0.2) return "continued upward momentum with healthy corrections";
+  return "strong accumulation opportunities with limited downside";
+}
+
+/**
+ * Get black swan risk multiplier
+ * @param {number} baseRisk - Base risk level (0-1)
+ * @returns {number} Multiplier for extreme events
+ */
+function getBlackSwanMultiplier(baseRisk) {
+  // Black swan multiplier increases with market stress
+  if (baseRisk > 0.8) return 3.0;
+  if (baseRisk > 0.6) return 2.5;
+  if (baseRisk > 0.4) return 2.0;
+  if (baseRisk > 0.2) return 1.5;
+  return 1.2;
+}
+
+/**
+ * Update suggestions based on conversation context
+ * @param {string} intentName - Last intent processed
+ * @param {boolean} isRephrase - Whether user requested a rephrase
+ * @param {Object} conversationContext - Conversation context
+ */
+function updateSuggestionsBasedOnContext(intentName, isRephrase, conversationContext) {
+  const suggestionContainer = document.querySelector('.rektBot-suggestions');
+  if (!suggestionContainer) return;
+  
+  let suggestions = [];
+  
+  if (isRephrase) {
+    suggestions = [
+      "Explain the current risk level",
+      "What factors are driving risk?",
+      "How should I adjust my strategy?",
+      "Show historical comparison"
+    ];
+  } else {
+    // Context-aware suggestions based on conversation
+    switch (intentName) {
+      case 'risk_assessment':
+        suggestions = [
+          "What factors are driving this risk?",
+          "How should I position myself?",
+          "Compare to historical periods",
+          "Show scenario analysis"
+        ];
+        break;
+      case 'strategy_advice':
+        suggestions = [
+          "What's the current risk outlook?",
+          "Explain the supporting metrics",
+          "Show historical precedents",
+          "Analyze different scenarios"
+        ];
+        break;
+      case 'educational':
+        if (conversationContext.lastConcept) {
+          suggestions = [
+            `How does ${conversationContext.lastConcept.name} affect risk?`,
+            "Show related concepts",
+            "Explain practical applications",
+            "Compare to other metrics"
+          ];
+        } else {
+          suggestions = [
+            "Explain MVRV ratio",
+            "What is NVT ratio?",
+            "How does the model work?",
+            "Explain market cycles"
+          ];
+        }
+        break;
+      case 'knowledge_explorer':
+        suggestions = [
+          "Explain crash risk factors",
+          "Show MVRV relationships", 
+          "Explore market cycles",
+          "Analyze on-chain metrics"
+        ];
+        break;
+      default:
+        suggestions = REKTBOT_CONFIG.suggestionPrompts;
+    }
+  }
+  
+  // Update suggestion chips
+  suggestionContainer.innerHTML = suggestions.map(suggestion => 
+    `<button class="suggestion-chip">${suggestion}</button>`
+  ).join('');
+  
+  // Add event listeners to new chips
+  suggestionContainer.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      const userInput = document.getElementById('rektBot-user-input');
+      if (userInput) {
+        userInput.value = this.textContent;
+        sendUserMessage();
+      }
+    });
+  });
+}
+
+
 
 
 /**
@@ -1375,6 +1804,122 @@ function addBotMessage(message, isHTML = false, isTyping = true) {
   // Scroll to bottom
   scrollToBottom();
 }
+
+/**
+ * Displays clarification suggestion chips to the user when NLU confidence is medium.
+ * @param {Array<Object>} chipsArray - Array of chip objects { label, intentKey, type: 'intent'|'action' }
+ * @param {string} originalMessage - The original user message.
+ * @param {any} originalSentiment - The sentiment of the original message.
+ * @param {Object} originalNluOutput - The full NLU output from enhancedNLU.processMessage().
+ */
+function displayClarificationChips(chipsArray, originalMessage, originalSentiment, originalNluOutput) {
+    const messagesContainer = document.getElementById('rektBot-messages');
+    if (!messagesContainer) return;
+
+    const chipsContainerId = 'rektbot-clarification-chips';
+    // Remove any existing clarification chips
+    const existingChipsContainer = document.getElementById(chipsContainerId);
+    if (existingChipsContainer) {
+        existingChipsContainer.remove();
+    }
+
+    const chipsDiv = document.createElement('div');
+    chipsDiv.id = chipsContainerId;
+    chipsDiv.className = 'rektbot-clarification-chips-container'; // Add a class for styling
+
+    chipsArray.forEach(chipData => {
+        const button = document.createElement('button');
+        button.className = 'suggestion-chip clarification-chip'; // Reuse styling, add specific class
+        button.textContent = chipData.label;
+        button.dataset.intentKey = chipData.intentKey;
+        button.dataset.chipType = chipData.type;
+
+        button.addEventListener('click', async () => {
+            // Remove chips once one is clicked
+            chipsDiv.remove();
+
+            if (chipData.intentKey === 'rephrase') {
+                addBotMessage("Okay, please try asking in a different way.", false, true);
+                const userInput = document.getElementById('rektBot-user-input');
+                if (userInput) userInput.focus();
+                // Update suggestions to general ones if needed
+                updateSuggestionsBasedOnContext(null, true, conversationContext);
+
+            } else if (chipData.type === 'intent') {
+                const chosenIntentKey = chipData.intentKey;
+                addBotMessage(`Okay, let's talk about ${chosenIntentKey.replace(/_/g, ' ')}.`, false, true);
+
+                // Prepare a modified NLU output with the chosen intent as primary
+                let modifiedNluOutput = JSON.parse(JSON.stringify(originalNluOutput)); // Deep copy
+
+                let chosenIntentObject;
+                if (originalNluOutput.primary.intent === chosenIntentKey) {
+                    chosenIntentObject = originalNluOutput.primary;
+                } else {
+                    chosenIntentObject = originalNluOutput.alternatives.find(alt => alt.intent === chosenIntentKey);
+                }
+
+                if (chosenIntentObject) {
+                    modifiedNluOutput.primary = {
+                        ...chosenIntentObject,
+                        confidence: 0.99, // Override confidence to high
+                        matchType: 'clarified-selection'
+                    };
+                    // Ensure entities from the chosen intent are present in the primary intent's entities
+                    // NLU output structure might already handle this, but good to be sure.
+                    // For example, if entities are directly under primaryIntent:
+                    // modifiedNluOutput.primary.entities = chosenIntentObject.entities || originalNluOutput.entities;
+                } else {
+                    // Fallback if something went wrong, though unlikely with well-formed chipsArray
+                    modifiedNluOutput.primary.intent = chosenIntentKey;
+                    modifiedNluOutput.primary.confidence = 0.99;
+                     modifiedNluOutput.primary.matchType = 'clarified-selection-fallback';
+                }
+                 modifiedNluOutput.alternatives = []; // Clear alternatives as intent is now clarified
+
+
+                // Route to the handler with the clarified intent
+                const responseDetails = routeToHandler(chosenIntentKey, originalMessage, originalSentiment, modifiedNluOutput);
+
+                if (responseDetails) {
+                    if (responseDetails.visual) {
+                        const fullResponse = document.createElement('div');
+                        fullResponse.className = 'rektbot-full-response';
+                        const textElement = document.createElement('div');
+                        textElement.className = 'rektbot-text-response';
+                        textElement.innerHTML = escapeHtml(responseDetails.text); // Ensure HTML is escaped if not intended
+                        fullResponse.appendChild(textElement);
+                        fullResponse.appendChild(responseDetails.visual);
+                        addBotMessage(fullResponse.outerHTML, true, true);
+                    } else {
+                        addBotMessage(responseDetails.text, false, true);
+                    }
+                    // Update conversation context with the bot's response and chosen intent
+                    conversationContext.addMessage('bot', responseDetails.text, modifiedNluOutput.primary.entities);
+                    if (modifiedNluOutput.primary.entities && modifiedNluOutput.primary.entities.concept) {
+                        conversationContext.lastConcept = modifiedNluOutput.primary.entities.concept;
+                    } else if (modifiedNluOutput.primary.concept) {
+                         conversationContext.lastConcept = { id: modifiedNluOutput.primary.concept, name: modifiedNluOutput.primary.concept.replace(/_/g, ' ') };
+                    }
+                }
+                updateSuggestionsBasedOnContext(chosenIntentKey, false, conversationContext);
+            }
+        });
+        chipsDiv.appendChild(button);
+    });
+
+    // Insert the chips container after the last bot message that prompted clarification
+    const lastBotMessage = messagesContainer.querySelector('.message.bot-message:last-child .message-bubble');
+    if (lastBotMessage) {
+        lastBotMessage.appendChild(chipsDiv);
+    } else {
+        messagesContainer.appendChild(chipsDiv); // Fallback if no prior bot message found
+    }
+    scrollToBottom();
+}
+
+
+
 /**
  * Create a visual representation of a knowledge graph concept
  * @param {string} conceptId - ID of the concept in the knowledge graph
@@ -1584,130 +2129,153 @@ function createConceptVisual(conceptId, explanation, relatedEntities) {
 }
 
 
+
 /**
- * Process a user message and generate a response
+ * Process a user message and generate a response.
+ * This version integrates confidence-based routing and clarification chips.
  * @param {string} message - User message text
  */
-function processUserMessage(message) {
+ async function processUserMessage(message) {
   // Use the enhanced NLU to understand the query
-  const processedMessage = enhancedNLU.processMessage(message, conversationContext);
-  
-  // Add the message to conversation context
-  conversationContext.addMessage('user', message, processedMessage.entities);
-  
-  // Get sentiment using NBC
-  const sentiment = botState.nbc ? botState.nbc.getSentimentScore(message) : 0;
-  
+  // enhancedNLU.processMessage() is assumed to be synchronous based on its usage.
+  // If it were async, this function would need `await`.
+  const nluOutput = enhancedNLU.processMessage(message, conversationContext); //
+    const { primary: primaryIntent, alternatives: alternativeIntents, resolvedMessage, entities: allNluEntities, context: nluContext } = nluOutput; // If you want to use resolvedMessage etc.
+
+    // Typo Indication (from Version B, adapted)
+    if (allNluEntities && allNluEntities.concept && // Ensure allNluEntities exists
+        allNluEntities.concept.similarity < 0.98 &&
+        allNluEntities.concept.similarity >= FUZZY_MATCH_THRESHOLD && 
+        allNluEntities.concept.matchType && allNluEntities.concept.matchType.includes('fuzzy')) {
+        addBotMessage(`(Thinking you meant "${allNluEntities.concept.name}"...)`, false, false); 
+    }
+  // Add the user message to conversation context
+  conversationContext.addMessage('user', message, nluOutput.entities); //
+
+  // Get sentiment using NBC (assumed synchronous)
+  const sentiment = botState.nbc ? botState.nbc.getSentimentScore(message) : 0; //
+
   // Update avatar mood based on sentiment
-  updateAvatarMood(sentiment > 0.3 ? 'bullish' : sentiment < -0.3 ? 'bearish' : 'neutral');
-  
-  // Check for knowledge explorer request
-  if (processedMessage.intent === 'knowledge_explorer' || 
-      /\b(explore|knowledge graph|show.*concepts|concept map)\b/i.test(message)) {
-    const response = handleKnowledgeExplorer(message, sentiment, processedMessage);
-    
-    // Add the bot response to context
-    conversationContext.addMessage('bot', response.text);
-    
-    // Display the response
+  updateAvatarMood(sentiment > 0.3 ? 'bullish' : sentiment < -0.3 ? 'bearish' : 'neutral'); //
+
+  // Extract primary intent and confidence from NLU output
+  const intentName = primaryIntent.intent;
+  const confidence = primaryIntent.confidence;
+
+  // Update last question type in bot context
+  botState.context.lastQuestionType = intentName; //
+
+  // Special handling for knowledge_explorer intent, as it has a unique UI setup
+  if (intentName === 'knowledge_explorer') {
+    const response = handleKnowledgeExplorer(message, sentiment, nluOutput); //
+    conversationContext.addMessage('bot', response.text, {}); // Assuming KG explorer doesn't add specific entities to context
     if (response.visual) {
       const fullResponse = document.createElement('div');
       fullResponse.className = 'rektbot-full-response';
-      
       const textElement = document.createElement('div');
       textElement.className = 'rektbot-text-response';
-      textElement.textContent = response.text;
+      textElement.innerHTML = escapeHtml(response.text); // Ensure HTML is escaped
       fullResponse.appendChild(textElement);
-      
       fullResponse.appendChild(response.visual);
-      
-      addBotMessage(fullResponse.outerHTML, true);
+      addBotMessage(fullResponse.outerHTML, true); //
     } else {
-      addBotMessage(response.text);
+      addBotMessage(response.text); //
     }
-    
-    // Update suggestions
-    updateSuggestions('knowledge_explorer');
-    
+    updateSuggestionsBasedOnContext(intentName, false, conversationContext); //
     return;
   }
-  
-  // Use the processed intent with higher confidence but allow overrides
-  let handler = handleGenericResponse;
-  let intent = processedMessage.intent; // Changed from const to let
-  let confidence = processedMessage.confidence; // Added confidence variable
-  
-  // Handle special cases where intents might be mixed
-  if (intent === 'metric_analysis' && 
-      (/\b(20\d\d|previous|past|before|last cycle|earlier|history)\b/i.test(message) ||
-       /\b(compare|comparison|similar|parallels)\b/i.test(message))) {
-    // Override to historical comparison if metrics are mentioned in historical context
-    console.log("Mixed intent detected: overriding metric_analysis with historical_comparison");
-    intent = 'historical_comparison';
-    confidence = 0.92;
+
+  let responseDetails;
+
+  try {
+    if (confidence >= INTENT_CONFIDENCE_THRESHOLDS.HIGH) { // Using defined constant
+      // High confidence: Route directly to handler
+      updateAvatarMood('thinking'); //
+      responseDetails = routeToHandler(intentName, message, sentiment, nluOutput); //
+      updateAvatarMood('neutral'); //
+
+      if (responseDetails) {
+        conversationContext.addMessage('bot', responseDetails.text, nluOutput.primary.entities); //
+        if (responseDetails.visual) {
+          const fullResponse = document.createElement('div');
+          fullResponse.className = 'rektbot-full-response';
+          const textElement = document.createElement('div');
+          textElement.className = 'rektbot-text-response';
+          textElement.innerHTML = escapeHtml(responseDetails.text);
+          fullResponse.appendChild(textElement);
+          fullResponse.appendChild(responseDetails.visual);
+          addBotMessage(fullResponse.outerHTML, true); //
+        } else {
+          addBotMessage(responseDetails.text); //
+        }
+        // Update suggestions based on the successfully handled intent
+        updateSuggestionsBasedOnContext(intentName, false, conversationContext); //
+      } else {
+        // If routeToHandler somehow returns nothing (should be handled by its own generic response)
+        responseDetails = handleGenericResponse(message, sentiment, nluOutput); //
+        conversationContext.addMessage('bot', responseDetails.text, {});
+        addBotMessage(responseDetails.text); //
+        updateSuggestionsBasedOnContext('general_query', false, conversationContext); //
+      }
+    } else if (confidence >= INTENT_CONFIDENCE_THRESHOLDS.MEDIUM && confidence < INTENT_CONFIDENCE_THRESHOLDS.HIGH) { // Using defined constants
+      // Medium confidence: Show clarification chips
+      addBotMessage("I'm not entirely sure what you mean. Did you want to know about one of these topics, or would you like to rephrase?", false, true); //
+      
+      let clarificationChips = [];
+      // Add the primary (medium-confidence) intent as the first option
+      if (primaryIntent && primaryIntent.intent !== 'general_query') {
+        clarificationChips.push({
+          label: `Yes, tell me about ${primaryIntent.intent.replace(/_/g, ' ')}`,
+          intentKey: primaryIntent.intent,
+          type: 'intent'
+        });
+      }
+
+      // Add alternatives from NLU output
+      if (nluOutput.alternatives && nluOutput.alternatives.length > 0) {
+        nluOutput.alternatives.slice(0, MAX_CLARIFICATION_CHIPS - clarificationChips.length -1 ).forEach(alt => { //
+          if (alt.intent !== primaryIntent.intent) { // Avoid duplicate of primary
+             clarificationChips.push({
+              label: `Maybe ${alt.intent.replace(/_/g, ' ')}?`,
+              intentKey: alt.intent,
+              type: 'intent'
+            });
+          }
+        });
+      }
+      
+      // Add a "Rephrase" option
+      clarificationChips.push({ label: "Let me rephrase...", intentKey: 'rephrase', type: 'action' });
+      
+      // Ensure we don't exceed max chips
+      clarificationChips = clarificationChips.slice(0, MAX_CLARIFICATION_CHIPS); //
+
+      displayClarificationChips(clarificationChips, message, sentiment, nluOutput); //
+      // Suggestions will be updated by displayClarificationChips if an intent is chosen or rephrase is selected.
+
+    } else { // Low confidence or general_query with low confidence
+      updateAvatarMood('thinking'); //
+      responseDetails = handleGenericResponse(message, sentiment, nluOutput); //
+      updateAvatarMood('neutral'); //
+      
+      conversationContext.addMessage('bot', responseDetails.text, {});
+      addBotMessage(responseDetails.text); //
+      updateSuggestionsBasedOnContext('general_query', true, conversationContext); // Suggest rephrasing for generic low confidence
+    }
+  } catch (error) {
+    console.error("Error processing user message:", error);
+    responseDetails = handleGenericResponse(message, sentiment, { primary: { intent: 'error_occurred', confidence: 1.0, entities: {} }, entities: {} }); //
+    conversationContext.addMessage('bot', responseDetails.text, {});
+    addBotMessage(responseDetails.text); //
+    updateSuggestionsBasedOnContext('general_query', true, conversationContext); //
   }
-  
-  botState.context.lastQuestionType = intent;
-  
-  // Map intent to handler
-  switch(intent) {
-    case 'risk_assessment':
-      handler = handleRiskAssessment;
-      break;
-    case 'strategy_advice':
-      handler = handleStrategyAdvice;
-      break;
-    case 'metric_analysis':
-      handler = handleMetricAnalysis;
-      break;
-    case 'market_prediction':
-      handler = handleMarketPrediction;
-      break;
-    case 'scenario_simulation':
-      handler = handleScenarioSimulation;
-      break;
-    case 'historical_comparison':
-      handler = handleHistoricalComparison;
-      break;
-    case 'educational':
-      handler = handleEducationalQuery;
-      break;
-    case 'donation_request':
-      handler = handleDonationRequest;
-      break;
-    case 'cheesecake_request':
-      handler = handleCheesecakeRequest;
-      break;
-    default:
-      handler = handleGenericResponse;
+
+  // Update conversation context with the bot's final response details' concept if any
+  if (responseDetails && responseDetails.concept) { // Assuming handlers might add a 'concept' field to their response
+      conversationContext.lastConcept = responseDetails.concept; //
+  } else if (nluOutput.primary && nluOutput.primary.concept) { // Fallback to NLU's identified concept
+      conversationContext.lastConcept = { id: nluOutput.primary.concept, name: nluOutput.primary.concept.replace(/_/g, ' ') }; //
   }
-  
-  // Generate response using the identified handler
-  // Pass both the original message and the processed info with entities
-  const response = handler(message, sentiment, processedMessage);
-  
-  // Add the bot response to context
-  conversationContext.addMessage('bot', response.text);
-  
-  // Display the response
-  if (response.visual) {
-    const fullResponse = document.createElement('div');
-    fullResponse.className = 'rektbot-full-response';
-    
-    const textElement = document.createElement('div');
-    textElement.className = 'rektbot-text-response';
-    textElement.textContent = response.text;
-    fullResponse.appendChild(textElement);
-    
-    fullResponse.appendChild(response.visual);
-    
-    addBotMessage(fullResponse.outerHTML, true);
-  } else {
-    addBotMessage(response.text);
-  }
-  
-  // Update suggestions based on conversation
-  updateSuggestions(intent);
 }
 
 /**
@@ -1738,23 +2306,69 @@ function updateMessageContext(message) {
     }
   });
 }
-
 /**
- * Update avatar mood
- * @param {string} mood - The mood to display ('bullish', 'neutral', or 'bearish')
+ * Initialize knowledge graph integration with current application state
+ */
+function initializeKnowledgeGraphIntegration() {
+  if (!knowledgeGraph) {
+    console.warn('Knowledge graph not available for integration');
+    return;
+  }
+  
+  // Update knowledge graph entities with current state
+  if (state.latestOnChainMetrics) {
+    // Update MVRV data
+    if (state.latestOnChainMetrics.mvrv) {
+      const mvrvEntity = knowledgeGraph.getEntity('MVRV_Ratio');
+      if (mvrvEntity) {
+        mvrvEntity.currentValue = state.latestOnChainMetrics.mvrv.value;
+        mvrvEntity.currentZScore = state.latestOnChainMetrics.mvrv.zScore;
+      }
+    }
+    
+    // Update NVT data
+    if (state.latestOnChainMetrics.nvt) {
+      const nvtEntity = knowledgeGraph.getEntity('NVT_Ratio');
+      if (nvtEntity) {
+        nvtEntity.currentValue = state.latestOnChainMetrics.nvt.value;
+        nvtEntity.currentZScore = state.latestOnChainMetrics.nvt.zScore;
+      }
+    }
+    
+    // Update cycle position
+    if (state.latestOnChainMetrics.cyclePosition !== undefined) {
+      const cycleEntity = knowledgeGraph.getEntity('market_cycle_position');
+      if (cycleEntity) {
+        cycleEntity.currentValue = state.latestOnChainMetrics.cyclePosition;
+      }
+    }
+  }
+  
+  console.log("Knowledge Graph integration updated with current application state");
+}
+/**
+ * Update avatar mood with enhanced states
+ * @param {string} mood - The mood to display ('bullish', 'bearish', 'neutral', 'thinking', 'alert')
  */
 function updateAvatarMood(mood) {
   if (!botState.avatar) return;
   
   // Remove all mood classes
-  botState.avatar.classList.remove(
-    'avatar-mood-bullish', 
-    'avatar-mood-neutral', 
-    'avatar-mood-bearish'
-  );
+  Object.values(AVATAR_MOODS).forEach(moodClass => {
+    botState.avatar.classList.remove(moodClass);
+  });
   
   // Add the appropriate mood class
-  botState.avatar.classList.add(`avatar-mood-${mood}`);
+  const moodClass = AVATAR_MOODS[mood.toUpperCase()] || AVATAR_MOODS.NEUTRAL;
+  botState.avatar.classList.add(moodClass);
+  
+  // Add temporary animation class
+  botState.avatar.classList.add('mood-transition');
+  setTimeout(() => {
+    if (botState.avatar) {
+      botState.avatar.classList.remove('mood-transition');
+    }
+  }, 300);
 }
 
 /**
@@ -1778,7 +2392,7 @@ function handleRiskAssessment(message, sentiment, processedMessage) {
   
   // Get current risk from application state
     const monthEntity = processedMessage.entities.month;
-    const currentMonth = monthEntity ? monthEntity.index + 1 : new Date().getMonth() + 1;
+    const currentMonth = monthEntity ? monthEntity.index + 1 : new Date().getMonth() ;
     const currentRisk = state.riskByMonth[timeframe][currentMonth];
   const riskValue = typeof currentRisk === 'object' ? currentRisk.risk : currentRisk;
   const riskPercentage = (riskValue * 100).toFixed(1);
@@ -3473,9 +4087,8 @@ setTimeout(() => {
                 
                 // Create chart config with proper parameters
                 const chartConfig = getScenarioChartConfig(currentPrice, newPercent, newDirection);
-                if (chartConfig) {
                   await createSafeChart(container, 'scenario', chartConfig);
-                }
+                
               }
             }
           }
@@ -5891,7 +6504,8 @@ function handleEducationalQuery(message, sentiment, processedMessage) {
     const conceptId = entities.concept.id;
     const userLevel = conversationContext.userProfile.knowledgeLevel || "intermediate"; // Default if undefined
 
-    const explanation = knowledgeGraph.explainEntity(conceptId, userLevel);
+   const explanation = knowledgeGraph.getRichExplanation(conceptId, userLevel);
+
     const relatedEntities = knowledgeGraph.getRelatedEntities(conceptId); // Fetch related entities
 
     if (explanation) {
